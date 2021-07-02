@@ -54,7 +54,7 @@ class Backtesting:
     """
 
     def __init__(self, config: Dict[str, Any]) -> None:
-
+        
         LoggingMixin.show_output = False
         self.config = config
 

@@ -5,6 +5,7 @@ Read the documentation to know what cli arguments you need.
 """
 import logging
 import sys
+import inspect
 from typing import Any, List
 
 
@@ -34,6 +35,7 @@ def main(sysargv: List[str] = None) -> None:
 
         # Call subcommand.
         if 'func' in args:
+            logger.info(f"EXECUTED: {args['func']}({args})")
             return_code = args['func'](args)
         else:
             # No subcommand was issued.

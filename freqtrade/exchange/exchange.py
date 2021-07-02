@@ -9,7 +9,7 @@ import logging
 from copy import deepcopy
 from datetime import datetime, timezone
 from math import ceil
-from typing import Any, Dict, List, Optional, Tuple
+from typing import *
 
 import arrow
 import ccxt

@@ -29,12 +29,21 @@ class StrategyResolver(IResolver):
     initial_search_path = None
 
     @staticmethod
-    def process_strategy(strategy: IStrategy, config: Dict[str, Any] = None) -> IStrategy:
+    def load_strategy(config: Dict[str, Any] = None) -> IStrategy:
         """
         Load the custom class from config parameter
         :param config: configuration dictionary or None
         """
         config = config or {}
+
+        if not config.get('strategy'):
+            raise OperationalException("No strategy set. Please use `--strategy` to specify "
+                                       "the strategy class to use.")
+
+        strategy_name = config['strategy']
+        strategy: IStrategy = StrategyResolver._load_strategy(
+            strategy_name, config=config,
+            extra_dir=config.get('strategy_path'))
 
         # make sure ask_strategy dict is available
         if 'ask_strategy' not in config:
@@ -93,25 +102,6 @@ class StrategyResolver(IResolver):
 
         StrategyResolver._strategy_sanity_validations(strategy)
         return strategy
-
-    @staticmethod
-    def load_strategy(config: Dict[str, Any] = None) -> IStrategy:
-        """
-        Load the custom class from config parameter
-        :param config: configuration dictionary or None
-        """
-        config = config or {}
-
-        if not config.get('strategy'):
-            raise OperationalException("No strategy set. Please use `--strategy` to specify "
-                                       "the strategy class to use.")
-
-        strategy_name = config['strategy']
-        strategy: IStrategy = StrategyResolver._load_strategy(
-            strategy_name, config=config,
-            extra_dir=config.get('strategy_path'))
-
-        return StrategyResolver.process_strategy(strategy, config)
 
     @staticmethod
     def _override_attribute_helper(strategy, config: Dict[str, Any],

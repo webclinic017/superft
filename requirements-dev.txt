@@ -23,3 +23,5 @@ types-cachetools==0.1.8
 types-filelock==0.1.4
 types-requests==0.1.13
 types-tabulate==0.1.1
+
+setuptools~=56.0.0

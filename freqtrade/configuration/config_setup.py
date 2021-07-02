@@ -26,3 +26,5 @@ def setup_utils_configuration(args: Dict[str, Any], method: RunMode) -> Dict[str
     validate_config_consistency(config)
 
     return config
+
+
