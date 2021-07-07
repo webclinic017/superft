@@ -3,6 +3,7 @@ from pandas import DataFrame
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
+from os import PathLike
 import inspect
 import attr
 
@@ -27,6 +28,10 @@ class Preset:
     initial_balance: float = attr.ib(default=0)
     max_open_trades: int = attr.ib(default=1000)
     fee: float = attr.ib(default=0.001)
+        
+    @classmethod
+    def from_preset(preset_path: PathLike):
+        pass
         
     def _get_config(self):
         """Using pipeline of freqtrade's config and args system"""
