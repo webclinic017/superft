@@ -9,6 +9,10 @@ user_data/notebooks/*
 freqtrade-plot.html
 freqtrade-profit-plot.html
 freqtrade/rpc/api_server/ui/*
+.temp/
+.artifacts/
+wandb/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -95,3 +99,4 @@ target/
 
 #exceptions
 !*.gitkeep
+artifacts/table-metadata-v0/metadata.table.json

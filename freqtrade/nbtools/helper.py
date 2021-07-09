@@ -8,7 +8,7 @@ import pathlib
 import json
 import inspect
 import re
-
+import arrow
 
 class Capturing(list):
     def __enter__(self):
@@ -29,6 +29,10 @@ def write_str(path: Path, content: str, temp=False):
 def write_json(path: Path, content: dict, temp=False):
     with open(path, "w") as stream:
         json.dump(content, stream)
+
+
+def get_readable_date() -> str:
+    return arrow.utcnow().shift(hours=7).strftime("%Y-%m-%d_%H-%M-%S")
 
 
 def get_class_from_string(code: str, clsname: str) -> Any:
