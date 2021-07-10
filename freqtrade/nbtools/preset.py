@@ -3,7 +3,7 @@ from pandas import DataFrame
 from copy import deepcopy
 from pathlib import Path
 from pprint import pprint
-from os import PathLike
+from os import PathLike, stat
 from copy import deepcopy
 import attr
 import os
@@ -19,33 +19,88 @@ from .backtest import NbBacktesting
 from .helper import get_function_body, get_readable_date
 from .remote_utils import preset_log, table_add_row
 
+wandb.login()
+
 
 @attr.s
 class Preset:
     name: str = attr.ib()
-    datadir: str = attr.ib()
     exchange: str = attr.ib()
-    timeframe: str = attr.ib()
-    timerange: str = attr.ib()
     stake_amount: int = attr.ib()
     pairs: List[str] = attr.ib()
-    initial_balance: float = attr.ib(default=0)
+    starting_balance: float = attr.ib(default=1000)
     max_open_trades: int = attr.ib(default=1000)
     fee: float = attr.ib(default=0.001)
-    config_raw: Dict[str, Any] = attr.ib(default={}, init=False)
-    config_optimize: Dict[str, Any] = attr.ib(default={}, init=False)
-        
-    @classmethod
-    def from_preset(preset_path: PathLike):
-        pass
+    strategy_code: Optional[str] = attr.ib(default=None, init=False)
+    datadir: Optional[str] = attr.ib(default=None, kw_only=True)
+    timeframe: Optional[str] = attr.ib(default=None, kw_only=True)
+    timerange: Optional[str] = attr.ib(default=None, kw_only=True)
     
-    def __attrs_post_init__(self):
-        wandb.login()
-        self.config_raw = self._get_config_raw()
-        self.config_optimize = self._get_config_optimize(self.config_raw)
+    @staticmethod
+    def from_cloud(cloud_preset_name: str) -> Tuple["Preset", str]:
+        raise NotImplementedError()
+    
+    @staticmethod
+    def from_local(local_preset_path: Union[str, Path]) -> Tuple["Preset", str]:
+        """ Loads preset from local folder then returns Preset and strategy code
+        """
+        path_local_preset: Union[str, Path] = deepcopy(local_preset_path)
         
-    def _get_config_raw(self) -> dict:
+        if not isinstance(local_preset_path, Path):
+            path_local_preset: Path = Path(local_preset_path)
+
+        with (path_local_preset / "config-backtesting.json").open("r") as fs:
+            config_dict = rapidjson.load(fs)
+        
+        try:
+            with (path_local_preset / "metadata.json").open("r") as fs:
+                metadata_dict = rapidjson.load(fs)
+        except:
+            metadata_dict = {"preset_name": path_local_preset.name}
+        
+        with (path_local_preset / "strategies" / "strategy.py").open("r") as fs:
+            strategy_code = fs.read()
+    
+        preset = Preset(
+            name = metadata_dict["preset_name"].split("__")[0],
+            exchange = config_dict["exchange"]["name"],
+            timeframe = config_dict.get("timeframe") or None,
+            timerange = config_dict.get("timerange") or "[ PLEASE ENTER TIMERANGE ]",
+            stake_amount = config_dict["stake_amount"],
+            pairs = config_dict["exchange"]["pair_whitelist"],
+            starting_balance = config_dict.get("dry_run_wallet") or 1000,
+            max_open_trades = config_dict["max_open_trades"],
+            fee = config_dict.get("fee") or 0.001,
+        )
+        preset.strategy_code = strategy_code
+        return preset, strategy_code
+        
+    def backtest_by_strategy_func(self, strategy_func: Callable[[Any], Any]) -> Tuple[dict, str]:
+        """ Given config, pairs, do a freqtrade backtesting
+            TODO: Backtest multiple strategies
+        """
+        assert self.datadir is not None, "Please fix your datadir!"
+        config_editable, config_optimize = self._get_configs()
+        strategy_code = get_function_body(strategy_func)
+        backtester = NbBacktesting(config_optimize)
+        stats, summary = backtester.start_nb_backtesting(strategy_code)
+        self._log_preset(strategy_code, stats, summary, config_editable, config_optimize)
+        return stats, summary
+    
+    def backtest_by_default_strategy_code(self) -> Tuple[dict, str]:
+        """ Presets retrieved from the cloud can use default strategy code to backtest.
+        """
+        assert self.datadir is not None, "Please fix your datadir!"
+        assert self.strategy_code is not None, "No default strategy code"
+        config_editable, config_optimize = self._get_configs()
+        backtester = NbBacktesting(config_optimize)
+        stats, summary = backtester.start_nb_backtesting(self.strategy_code)
+        self._log_preset(self.strategy_code, stats, summary, config_editable, config_optimize)
+        return stats, summary
+    
+    def _get_configs(self) -> Tuple[dict, dict]:
         """Editable config.json"""
+        # TODO: Download if datadir startswith "wandb"
         config = deepcopy(base_config)
         config["max_open_trades"] = self.max_open_trades
         config["stake_amount"] = self.stake_amount
@@ -53,29 +108,16 @@ class Preset:
         config["exchange"]["pair_whitelist"] = self.pairs
         config["bot_name"] = self.name
         config["fee"] = self.fee
-        return config
-        
-    def _get_config_optimize(self, config_raw) -> dict:
-        """Using pipeline of freqtrade's config and args system"""
+        config["dry_run_wallet"] = self.starting_balance
         args = {
             "datadir": self.datadir, 
             "timerange": self.timerange, 
             "timeframe": self.timeframe
         }
-        config = setup_optimize_configuration(config_raw, args, RunMode.BACKTEST)
-        return config
-        
-    def backtest_by_strategy_func(self, strategy_func: Callable[[Any], Any]) -> Tuple[dict, str]:
-        """ Given config, pairs, do a freqtrade backtesting
-            TODO: Backtest multiple strategies
-        """
-        strategy_code = get_function_body(strategy_func)
-        backtester = NbBacktesting(self.config_optimize)
-        stats, summary = backtester.start_nb_backtesting(strategy_code)
-        self._log_preset(strategy_code, stats, summary)
-        return stats, summary
+        config_optimize = setup_optimize_configuration(config, args, RunMode.BACKTEST)
+        return config, config_optimize
     
-    def _log_preset(self, strategy_code: str, stats: dict, summary: str):
+    def _log_preset(self, strategy_code: str, stats: dict, summary: str, config_editable: dict, config_optimize: dict):
         """
         Don't upload anything if anything error.
         Upload:
@@ -87,10 +129,12 @@ class Preset:
         """
         current_date = get_readable_date()
         preset_name = f"{self.name}__backtest-{current_date}"
+        metadata = self._generate_metadata(stats, preset_name, current_date)
         filename_and_content = {
-            "metadata.json": self._generate_metadata(stats, preset_name, current_date),
-            "config-backtesting.json": self.config_raw,
-            "config-optimize.json": self.config_optimize,
+            "metadata.json": metadata,
+            "config-backtesting.json": config_optimize,
+            # "config-backtesting.json": config_editable,
+            # "config-optimize.json": config_optimize,
             "exports/stats.json": stats,
             "exports/summary.txt": summary,
             "strategies/strategy.py": strategy_code,
@@ -111,7 +155,7 @@ class Preset:
         # wandb log artifact
         preset_log( f"./.temp/{preset_name}", constants.PROJECT_NAME, preset_name)
         # wandb add row
-        table_add_row(filename_and_content["metadata.json"], 
+        table_add_row(metadata, 
                       constants.PROJECT_NAME, 
                       constants.ARTIFACT_TABLE_METADATA, 
                       constants.TABLEKEY_METADATA)
