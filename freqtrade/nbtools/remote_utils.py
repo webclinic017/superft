@@ -6,6 +6,7 @@ import pandas as pd
 import os
 import dill
 
+
 from freqtrade.nbtools import constants
 
 """
@@ -14,6 +15,17 @@ it is:
 - constants.py
 - remote_utils.py
 """
+
+class Memoize:
+
+    def __init__(self, fn):
+        self.fn = fn
+        self.memo = {}
+
+    def __call__(self, *args):
+        if args not in self.memo:
+            self.memo[args] = self.fn(*args)
+        return self.memo[args]
 
 
 def preset_log(preset_directory: str, project: str, preset_name: str):
@@ -67,49 +79,51 @@ def table_update(new_df: pd.DataFrame, project: str, artifact_name: str, table_k
         run.log_artifact(table_artifact)
 
 
-def cloud_load_preset(preset_name: str) -> Any:
+def cloud_retrieve_preset(preset_name: str) -> Any:
     """ Returns {Preset} by downloading preset folder from the cloud according to preset name, then load it.
         The goal of Saving presets are for:
         - Reproducibility
         - Easy integration to live / dry run (Download preset artifact -> insert big file -> Reroute big file in strategy.py)
-    
-    Why load presets are hard to implement in Backtesting:
-    1. By loading the preset, you loaded previously "Backtested" preset that you know the results by just looking
-       at the metadata. What are you looking for? Plot profits?
-       - Well, you may want to retest the same preset with different settings (maybe you want to backtest with present data).
-         > Backtest Settings: Timerange, Pairlists, Timeframe, Max Open Trades, Stake Amount, Starting Balance
-         > What to Backtest: Strategy code
-         > When they all combined: Preset
-    2. TODO: Resolve loading big files. It should only `model = load_big_file("my_big_file.pkl")` (vendor.wandb_utils)
-             So we will need:
-             - Code to save big file after training
-             - Code to download and cache big file
     """
-    pass
+    with wandb.init(project=constants.PROJECT_NAME_PRESETS, job_type="load-data") as run:
+        dataset = run.use_artifact(f'{preset_name}:latest')
+        directory = dataset.download()
+        return os.path.join(directory, os.listdir(directory)[0])
 
 
 def cloud_get_presets_df(from_run_history: bool = False) -> DataFrame:
     """ Returns {DataFrame} list of presets table along with metadata.
-        Goals:
-        - Obvious, saves time by looking the numbers you want when deciding which strategy to dry / live run.
+        Used in: Notebook Backtester, ftrunner
     """
-    df = table_retrieve(constants.PROJECT_NAME, constants.ARTIFACT_TABLE_METADATA, constants.TABLEKEY_METADATA)
+    df = table_retrieve(constants.PROJECT_NAME_PRESETS, constants.PRESETS_ARTIFACT_METADATA, constants.PRESETS_TABLEKEY_METADATA)
     if from_run_history:
         df = df.loc[df["preset_name"].str.contains("__run-")]
     return df
 
 
 def add_single_asset(path, project, asset_name):
+    """ Used in: Training code
+    """
     with wandb.init(project=project) as run:
         artifact = wandb.Artifact(asset_name, type="single")
         artifact.add_file(path, name=asset_name)
         run.log_artifact(artifact)
 
 
+@Memoize
 def load_pickle_asset(project, asset_name):
+    """ Used in: Strategy and ftrunner
+    """
     with wandb.init(project=project) as run:
         artifact = run.use_artifact(f'{asset_name}:latest')
         path = Path.cwd() / artifact.download()
         filepath = path / os.listdir(path)[0]
         with filepath.open("rb") as f:
             return dill.load(f)
+
+
+if __name__ == "__main__":
+    print("LOAD 1st")
+    print(str(load_pickle_asset("legacy-models", "15m-next30m-10_06_new.pkl"))[:50])
+    print("LOAD 2nd")
+    print(str(load_pickle_asset("legacy-models", "15m-next30m-10_06_new.pkl"))[:50])

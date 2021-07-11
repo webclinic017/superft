@@ -1,3 +1,3 @@
-PROJECT_NAME = "ft-presets"
-ARTIFACT_TABLE_METADATA = "table-metadata"
-TABLEKEY_METADATA = "metadata"
+PROJECT_NAME_PRESETS = "ft-presets"
+PRESETS_ARTIFACT_METADATA = "table-metadata"
+PRESETS_TABLEKEY_METADATA = "metadata"

@@ -5,10 +5,12 @@ from pathlib import Path
 from pprint import pprint
 from os import PathLike, stat
 from copy import deepcopy
+from collections import OrderedDict
 import attr
 import os
 import wandb
 import rapidjson
+import json
 
 from freqtrade.enums.runmode import RunMode
 from freqtrade.nbtools import constants
@@ -17,7 +19,7 @@ from .config import base_config
 from .configuration import setup_optimize_configuration
 from .backtest import NbBacktesting
 from .helper import get_function_body, get_readable_date
-from .remote_utils import preset_log, table_add_row
+from .remote_utils import preset_log, table_add_row, cloud_retrieve_preset
 
 wandb.login()
 
@@ -38,7 +40,9 @@ class Preset:
     
     @staticmethod
     def from_cloud(cloud_preset_name: str) -> Tuple["Preset", str]:
-        raise NotImplementedError()
+        preset_path = cloud_retrieve_preset(cloud_preset_name)
+        preset_path = Path.cwd() / preset_path
+        return Preset.from_local(preset_path)
     
     @staticmethod
     def from_local(local_preset_path: Union[str, Path]) -> Tuple["Preset", str]:
@@ -64,8 +68,8 @@ class Preset:
         preset = Preset(
             name = metadata_dict["preset_name"].split("__")[0],
             exchange = config_dict["exchange"]["name"],
-            timeframe = config_dict.get("timeframe") or None,
-            timerange = config_dict.get("timerange") or "[ PLEASE ENTER TIMERANGE ]",
+            timeframe = config_dict.get("timeframe") or metadata_dict.get("timeframe") or None,
+            timerange = config_dict.get("timerange") or metadata_dict.get("timerange") or "[ PLEASE ENTER TIMERANGE ]",
             stake_amount = config_dict["stake_amount"],
             pairs = config_dict["exchange"]["pair_whitelist"],
             starting_balance = config_dict.get("dry_run_wallet") or 1000,
@@ -112,8 +116,10 @@ class Preset:
         args = {
             "datadir": self.datadir, 
             "timerange": self.timerange, 
-            "timeframe": self.timeframe
         }
+        if self.timeframe is not None:
+            args["timeframe"] = self.timeframe
+        
         config_optimize = setup_optimize_configuration(config, args, RunMode.BACKTEST)
         return config, config_optimize
     
@@ -132,9 +138,9 @@ class Preset:
         metadata = self._generate_metadata(stats, preset_name, current_date)
         filename_and_content = {
             "metadata.json": metadata,
-            "config-backtesting.json": config_optimize,
-            # "config-backtesting.json": config_editable,
-            # "config-optimize.json": config_optimize,
+            # "config-backtesting.json": config_optimize,
+            "config-backtesting.json": config_editable,
+            "config-optimize.json": config_optimize,
             "exports/stats.json": stats,
             "exports/summary.txt": summary,
             "strategies/strategy.py": strategy_code,
@@ -147,18 +153,21 @@ class Preset:
         
         for filename, content in filename_and_content.items():
             with open(f"./.temp/{preset_name}/{filename}", mode="w") as f:
+                if filename == "config-backtesting.json":
+                    json.dump(content, f, default=str, indent=4)
+                    continue
                 if filename.endswith(".json"):
                     rapidjson.dump(content, f, default=str, number_mode=rapidjson.NM_NATIVE)
                     continue
                 f.write(content)
         
         # wandb log artifact
-        preset_log( f"./.temp/{preset_name}", constants.PROJECT_NAME, preset_name)
+        preset_log( f"./.temp/{preset_name}", constants.PROJECT_NAME_PRESETS, preset_name)
         # wandb add row
         table_add_row(metadata, 
-                      constants.PROJECT_NAME, 
-                      constants.ARTIFACT_TABLE_METADATA, 
-                      constants.TABLEKEY_METADATA)
+                      constants.PROJECT_NAME_PRESETS, 
+                      constants.PRESETS_ARTIFACT_METADATA, 
+                      constants.PRESETS_TABLEKEY_METADATA)
         
     def _generate_metadata(self, stats: dict, folder_name: str, current_date: str) -> dict:
         """ Generate backtesting summary in dict / json format
@@ -188,6 +197,7 @@ class Preset:
         metadata["avg_profit_losers_abs"] = trades.loc[trades["profit_abs"] < 0, "profit_abs"].dropna().mean()
         metadata["sum_profit_winners_abs"] = trades.loc[trades["profit_abs"] >= 0, "profit_abs"].dropna().sum()
         metadata["sum_profit_losers_abs"] = trades.loc[trades["profit_abs"] < 0, "profit_abs"].dropna().sum()
+        metadata["profit_mean_abs"] = trades_summary["profit_total_abs"] / trades_summary["total_trades"]
         metadata["profit_factor"] = metadata["sum_profit_winners_abs"] / abs(metadata["sum_profit_losers_abs"])
         metadata["profit_per_drawdown"] = trades_summary["profit_total_abs"] / abs(trades_summary["max_drawdown_abs"])
         metadata["expectancy_abs"] = (

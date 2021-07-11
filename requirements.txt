@@ -1,7 +1,8 @@
 numpy==1.21.0
 pandas==1.2.4
 
-ccxt==1.51.77
+ccxt==1.52.76
+
 # Pin cryptography for now due to rust build errors with piwheels
 cryptography==3.4.7
 aiohttp==3.7.4.post0
@@ -38,6 +39,12 @@ aiofiles==0.7.0
 
 # Support for colorized terminal output
 colorama==0.4.4
+
 # Building config files interactively
 questionary==1.9.0
 prompt-toolkit==3.0.19
+
+# freqtrade-helper
+dill==0.3.4
+wandb==0.10.33
+catboost==0.26
