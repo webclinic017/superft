@@ -186,12 +186,12 @@ class Preset:
 
         metadata = {}
         metadata["preset_name"] = folder_name
-        metadata["backtest_date"] = current_date
+        metadata["backtest_date"] = current_date.split("_")[0] + " " + current_date.split("_")[1].replace("-", ":")
         metadata["leverage"] = 1
         metadata["direction"] = "long"
         metadata["is_hedging"] = False
         metadata["num_pairs"] = len(trades_summary["pairlist"])
-        metadata["data_source"] = "self.config['exchange']"
+        metadata["data_source"] = self.exchange
         metadata["win_rate"] = trades_summary["wins"] / trades_summary["total_trades"]
         metadata["avg_profit_winners_abs"] = trades.loc[trades["profit_abs"] >= 0, "profit_abs"].dropna().mean()
         metadata["avg_profit_losers_abs"] = trades.loc[trades["profit_abs"] < 0, "profit_abs"].dropna().mean()
