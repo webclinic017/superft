@@ -1,11 +1,12 @@
+import os
+os.environ["WANDB_SILENT"] = "true"
+
 from typing import *
 from pandas import DataFrame
 from pathlib import Path
 import wandb
 import pandas as pd
-import os
 import dill
-
 
 from freqtrade.nbtools import constants
 

@@ -73,9 +73,9 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     print("End Balance          : %.2f" % profits_usd[-1])
     print("------------------------------")
     print("Trades               : %i" % len(profits_usd))
+    print("Avg. Profit %%        : %.2f%%" % (trades["profit_ratio"].mean()*100))
     print("Avg. Profit $        : %.2f" % (profits_usd[-1] / len(profits_usd)))
     print("Biggest Profit $     : %.2f" % trades.profit_abs.max())
     print("Biggest Loss $       : %.2f" % trades.profit_abs.min())
     print("------------------------------")
-    print("Sharpe               : %.2f" % trades.profit_abs.cumsum().pct_change().sharpe())
     # TODO: Max Drawdown, Return / Drawdown

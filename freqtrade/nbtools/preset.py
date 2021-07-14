@@ -186,6 +186,8 @@ class Preset:
             with (self.path_local_preset / "exports" / "summary.txt").open("w") as fs:
                fs.write(summary)
         
+        print(f"Backtest finished with preset name: {preset_name}")
+        
     def _generate_metadata(self, stats: dict, folder_name: str, current_date: str) -> dict:
         """ Generate backtesting summary in dict / json format
         """
