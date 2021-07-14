@@ -28,8 +28,8 @@ class Memoize:
         return self.memo[args]
 
 
-def preset_log(preset_directory: str, project: str, preset_name: str):
-    with wandb.init(project=project, job_type="load-data") as run:
+def preset_log(preset_directory: str, preset_name: str):
+    with wandb.init(project=constants.PROJECT_NAME_PRESETS, job_type="load-data") as run:
         artifact = wandb.Artifact(preset_name, type="preset")
         artifact.add_dir(f"./{preset_directory}", name=preset_name)
         run.log_artifact(artifact)

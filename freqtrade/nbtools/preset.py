@@ -34,6 +34,7 @@ class Preset:
     max_open_trades: int = attr.ib(default=1000)
     fee: float = attr.ib(default=0.001)
     strategy_code: Optional[str] = attr.ib(default=None, init=False)
+    path_local_preset: Optional[Path] = attr.ib(default=None, init=False)
     datadir: Optional[str] = attr.ib(default=None, kw_only=True)
     timeframe: Optional[str] = attr.ib(default=None, kw_only=True)
     timerange: Optional[str] = attr.ib(default=None, kw_only=True)
@@ -42,10 +43,10 @@ class Preset:
     def from_cloud(cloud_preset_name: str) -> Tuple["Preset", str]:
         preset_path = cloud_retrieve_preset(cloud_preset_name)
         preset_path = Path.cwd() / preset_path
-        return Preset.from_local(preset_path)
+        return Preset.from_local(preset_path, is_from_cloud=True)
     
     @staticmethod
-    def from_local(local_preset_path: Union[str, Path]) -> Tuple["Preset", str]:
+    def from_local(local_preset_path: Union[str, Path], is_from_cloud: bool = False) -> Tuple["Preset", str]:
         """ Loads preset from local folder then returns Preset and strategy code
         """
         path_local_preset: Union[str, Path] = deepcopy(local_preset_path)
@@ -77,6 +78,7 @@ class Preset:
             fee = config_dict.get("fee") or 0.001,
         )
         preset.strategy_code = strategy_code
+        preset.path_local_preset = path_local_preset
         return preset, strategy_code
         
     def backtest_by_strategy_func(self, strategy_func: Callable[[Any], Any]) -> Tuple[dict, str]:
@@ -146,14 +148,14 @@ class Preset:
             "strategies/strategy.py": strategy_code,
         }
         
-        # Generate folder and files
+        # Generate folder and files to be uploaded
         os.mkdir(f"./.temp/{preset_name}")
         os.mkdir(f"./.temp/{preset_name}/exports")
         os.mkdir(f"./.temp/{preset_name}/strategies")
         
         for filename, content in filename_and_content.items():
             with open(f"./.temp/{preset_name}/{filename}", mode="w") as f:
-                if filename == "config-backtesting.json":
+                if "config" in filename or filename == "metadata.json":
                     json.dump(content, f, default=str, indent=4)
                     continue
                 if filename.endswith(".json"):
@@ -162,12 +164,27 @@ class Preset:
                 f.write(content)
         
         # wandb log artifact
-        preset_log( f"./.temp/{preset_name}", constants.PROJECT_NAME_PRESETS, preset_name)
+        preset_log( f"./.temp/{preset_name}", preset_name)
         # wandb add row
         table_add_row(metadata, 
                       constants.PROJECT_NAME_PRESETS, 
                       constants.PRESETS_ARTIFACT_METADATA, 
                       constants.PRESETS_TABLEKEY_METADATA)
+        
+        # (if use local preset) update local results 
+        if self.path_local_preset is not None:
+            print(f"You are backtesting a local preset `{self.path_local_preset}`")
+            print("Keep in mind that this will update backtest results (such as metadata.json, exports)")
+            print("But if you modified the strategy from notebook, it will not update the local strategy file.")
+            # local metadata
+            with (self.path_local_preset / "metadata.json").open("w") as fs:
+               json.dump(metadata, fs, default=str, indent=4)
+            # local exports/stats.json
+            with (self.path_local_preset / "exports" / "stats.json").open("w") as fs:
+               json.dump(stats, fs, default=str, indent=4)
+            # local exports/summary.txt
+            with (self.path_local_preset / "exports" / "summary.txt").open("w") as fs:
+               fs.write(summary)
         
     def _generate_metadata(self, stats: dict, folder_name: str, current_date: str) -> dict:
         """ Generate backtesting summary in dict / json format
@@ -187,9 +204,9 @@ class Preset:
         metadata = {}
         metadata["preset_name"] = folder_name
         metadata["backtest_date"] = current_date.split("_")[0] + " " + current_date.split("_")[1].replace("-", ":")
-        metadata["leverage"] = 1
-        metadata["direction"] = "long"
-        metadata["is_hedging"] = False
+        metadata["leverage"] = 1  # TODO from stats
+        metadata["direction"] = "long"  # TODO from stats
+        metadata["is_hedging"] = False  # TODO from stats
         metadata["num_pairs"] = len(trades_summary["pairlist"])
         metadata["data_source"] = self.exchange
         metadata["win_rate"] = trades_summary["wins"] / trades_summary["total_trades"]
