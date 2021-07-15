@@ -157,7 +157,7 @@ class Preset:
             "strategies/strategy.py": strategy_code,
         }
         
-        # Generate folder and files
+        # Generate folder and files to be uploaded
         os.mkdir(f"./.temp/{preset_name}")
         os.mkdir(f"./.temp/{preset_name}/exports")
         os.mkdir(f"./.temp/{preset_name}/strategies")
@@ -195,7 +195,7 @@ class Preset:
             with (self.path_local_preset / "exports" / "summary.txt").open("w") as fs:
                fs.write(summary)
         
-        print(f"Synced preset with name: {preset_name}")
+        print(f"[BACKTEST FINISHED] Synced preset with name: {preset_name}")
 
     def _generate_metadata(self, stats: dict, name: str, current_date: str) -> dict:
         """ Generate backtesting summary in dict / json format

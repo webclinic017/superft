@@ -19,7 +19,7 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     # Plot style
     grid_color = "black"
     grid_alpha = 0.1
-    
+
     # Section 1.1: BTC/USDT price over time
     btc_usdt_df = pd.read_json(path_mount / "data" / "binance" / "BTC_USDT-15m.json")
     btc_usdt_df.columns = ["date", "open", "high", "low", "close", "volume"]
