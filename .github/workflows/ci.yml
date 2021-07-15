@@ -4,8 +4,7 @@ on:
   push:
     branches:
       - master
-      - stable
-      - develop
+      - ft-develop
     tags:
   release:
     types: [published]
