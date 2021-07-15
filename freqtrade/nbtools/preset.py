@@ -80,10 +80,11 @@ class Preset:
         return preset, strategy_code
         
     def backtest_by_strategy_func(self, strategy_func: Callable[[Any], Any]) -> Tuple[dict, str]:
-        """ Given config, pairs, do a freqtrade backtesting
-            TODO: Backtest multiple strategies
+        """ 
+        Given config, pairs, do a freqtrade backtesting
         """
         assert self.datadir is not None, "Please fix your datadir!"
+        
         config_editable, config_optimize = self._get_configs()
         strategy_code = get_function_body(strategy_func)
         backtester = NbBacktesting(config_optimize)
@@ -92,10 +93,12 @@ class Preset:
         return stats, summary
     
     def backtest_by_default_strategy_code(self) -> Tuple[dict, str]:
-        """ Presets retrieved from the cloud can use default strategy code to backtest.
+        """ 
+        Presets retrieved from the cloud can use default strategy code to backtest.
         """
         assert self.datadir is not None, "Please fix your datadir!"
         assert self.strategy_code is not None, "No default strategy code"
+        
         config_editable, config_optimize = self._get_configs()
         backtester = NbBacktesting(config_optimize)
         stats, summary = backtester.start_nb_backtesting(self.strategy_code)
@@ -103,22 +106,29 @@ class Preset:
         return stats, summary
     
     def _get_configs(self) -> Tuple[dict, dict]:
-        """Editable config.json"""
-        # TODO: Load from "config-backtesting.json" as base config.
+        """
+        Process config through freqtrade's config parser
+        """
+        # TODO: If exists, Load from "config-backtesting.json" as base config.
         config = deepcopy(base_config)
-        config["max_open_trades"] = self.max_open_trades
-        config["stake_amount"] = self.stake_amount
-        config["exchange"]["name"] = self.exchange
-        config["exchange"]["pair_whitelist"] = self.pairs
-        config["bot_name"] = self.name
-        config["fee"] = self.fee
-        config["dry_run_wallet"] = self.starting_balance
+        update = {
+            "max_open_trades": self.max_open_trades,
+            "stake_amount": self.stake_amount,
+            "dry_run_wallet": self.starting_balance,
+            "fee": self.fee,
+            "bot_name": self.name,
+            "exchange": {
+                "name": self.exchange,
+                "pair_whitelist": self.pairs,
+            }
+        }
+        config.update(update)
         args = {
             "datadir": self.datadir, 
             "timerange": self.timerange, 
         }
         if self.timeframe is not None:
-            args["timeframe"] = self.timeframe
+            args.update({"timeframe": self.timeframe})
         
         config_optimize = setup_optimize_configuration(config, args, RunMode.BACKTEST)
         return config, config_optimize
@@ -138,7 +148,6 @@ class Preset:
         metadata = self._generate_metadata(stats, preset_name, current_date)
         filename_and_content = {
             "metadata.json": metadata,
-            # "config-backtesting.json": config_optimize,
             "config-backtesting.json": config_editable,
             "config-optimize.json": config_optimize,
             "exports/stats.json": stats,
@@ -169,41 +178,40 @@ class Preset:
                       constants.PRESETS_ARTIFACT_METADATA, 
                       constants.PRESETS_TABLEKEY_METADATA)
         
-    def _generate_metadata(self, stats: dict, folder_name: str, current_date: str) -> dict:
+    def _generate_metadata(self, stats: dict, name: str, current_date: str) -> dict:
         """ Generate backtesting summary in dict / json format
         """
         trades = DataFrame(deepcopy(stats["strategy"]["NotebookStrategy"]["trades"]))
         trades_summary = deepcopy(stats["strategy"]["NotebookStrategy"])
         current_date = get_readable_date()
 
-        del trades_summary["trades"]
-        del trades_summary["locks"]
-        del trades_summary["best_pair"]
-        del trades_summary["worst_pair"]
-        del trades_summary["results_per_pair"]
-        del trades_summary["sell_reason_summary"]
-        del trades_summary["left_open_trades"]
-
-        metadata = {}
-        metadata["preset_name"] = folder_name
-        metadata["backtest_date"] = current_date.split("_")[0] + " " + current_date.split("_")[1].replace("-", ":")
-        metadata["leverage"] = 1
-        metadata["direction"] = "long"
-        metadata["is_hedging"] = False
-        metadata["num_pairs"] = len(trades_summary["pairlist"])
-        metadata["data_source"] = self.exchange
-        metadata["win_rate"] = trades_summary["wins"] / trades_summary["total_trades"]
-        metadata["avg_profit_winners_abs"] = trades.loc[trades["profit_abs"] >= 0, "profit_abs"].dropna().mean()
-        metadata["avg_profit_losers_abs"] = trades.loc[trades["profit_abs"] < 0, "profit_abs"].dropna().mean()
-        metadata["sum_profit_winners_abs"] = trades.loc[trades["profit_abs"] >= 0, "profit_abs"].dropna().sum()
-        metadata["sum_profit_losers_abs"] = trades.loc[trades["profit_abs"] < 0, "profit_abs"].dropna().sum()
-        metadata["profit_mean_abs"] = trades_summary["profit_total_abs"] / trades_summary["total_trades"]
-        metadata["profit_factor"] = metadata["sum_profit_winners_abs"] / abs(metadata["sum_profit_losers_abs"])
-        metadata["profit_per_drawdown"] = trades_summary["profit_total_abs"] / abs(trades_summary["max_drawdown_abs"])
-        metadata["expectancy_abs"] = (
-            (metadata["win_rate"] * metadata["avg_profit_winners_abs"]) + 
-            ((1 - metadata["win_rate"]) * metadata["avg_profit_losers_abs"])
-        )
+        del_keys = [ "trades", "locks", "best_pair", "worst_pair", "results_per_pair", "sell_reason_summary", "left_open_trades"]
+        for key in del_keys:
+            del trades_summary[key]
+        
+        metadata = {
+            "preset_name": name,
+            "backtest_date": current_date.split("_")[0] + " " + current_date.split("_")[1].replace("-", ":"),
+            "leverage": 1,
+            "direction": "long",
+            "is_hedging": False,
+            "num_pairs": len(trades_summary["pairlist"]),
+            "data_source": self.exchange,
+            "win_rate": trades_summary["wins"] / trades_summary["total_trades"],
+            "avg_profit_winners_abs": trades.loc[trades["profit_abs"] >= 0, "profit_abs"].dropna().mean(),
+            "avg_profit_losers_abs": trades.loc[trades["profit_abs"] < 0, "profit_abs"].dropna().mean(),
+            "sum_profit_winners_abs": trades.loc[trades["profit_abs"] >= 0, "profit_abs"].dropna().sum(),
+            "sum_profit_losers_abs": trades.loc[trades["profit_abs"] < 0, "profit_abs"].dropna().sum(),
+            "profit_mean_abs": trades_summary["profit_total_abs"] / trades_summary["total_trades"],
+            "profit_per_drawdown": trades_summary["profit_total_abs"] / abs(trades_summary["max_drawdown_abs"]),
+        }
+        metadata.update({
+            "profit_factor": metadata["sum_profit_winners_abs"] / abs(metadata["sum_profit_losers_abs"]),
+            "expectancy_abs": (
+                (metadata["win_rate"] * metadata["avg_profit_winners_abs"]) + 
+                ((1 - metadata["win_rate"]) * metadata["avg_profit_losers_abs"])
+            ),
+        })
 
         for key, value in trades_summary.items():
             is_valid = any(

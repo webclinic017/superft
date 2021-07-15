@@ -8,6 +8,8 @@ from freqtrade.misc import round_coin_value
 from freqtrade.configuration.check_exchange import remove_credentials
 from freqtrade.configuration.config_validation import validate_config_consistency
 from freqtrade.configuration.configuration import Configuration
+from freqtrade.configuration.check_exchange import check_exchange
+from freqtrade.configuration.deprecated_settings import process_temporary_deprecated_settings
 
 
 class NbConfiguration(Configuration):
@@ -49,6 +51,19 @@ class NbConfiguration(Configuration):
         
         self._process_config(config)
         return config
+    
+    def _process_config(self, config: Dict[str, Any]) -> None:
+        self._process_logging_options(config)
+        self._process_runmode(config)
+        self._process_common_options(config)
+        self._process_trading_options(config)
+        self._process_optimize_options(config)
+        self._process_plot_options(config)
+        self._process_data_options(config)
+        # Check if the exchange set by the user is supported
+        check_exchange(config, config.get('experimental', {}).get('block_bad_exchanges', True))
+        self._resolve_pairs_list(config)
+        process_temporary_deprecated_settings(config)
 
 
 def setup_utils_configuration(base_config: Dict[str, Any], args: Dict[str, Any], method: RunMode) -> Dict[str, Any]:

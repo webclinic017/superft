@@ -39,7 +39,7 @@ class NbBacktesting(Backtesting):
         :return: None
         """
         strategy = get_class_from_string(strategy_code, "NotebookStrategy")(self.config)
-        strategy = StrategyResolver.process_strategy(strategy, self.config)
+        strategy = process_strategy(strategy, self.config)
         self.strategylist.append(strategy)
         self.exchange = ExchangeResolver.load_exchange(self.config['exchange']['name'], self.config)
         self.dataprovider = DataProvider(self.config, None)
@@ -101,3 +101,69 @@ class NbBacktesting(Backtesting):
                 show_backtest_results(self.config, stats)
             
         return (stats, "\n".join(print_text))
+    
+    
+def process_strategy(strategy: IStrategy, config: Dict[str, Any] = None) -> IStrategy:
+    """
+    Load the custom class from config parameter
+    :param config: configuration dictionary or None
+    """
+    config = config or {}
+
+    # make sure ask_strategy dict is available
+    if 'ask_strategy' not in config:
+        config['ask_strategy'] = {}
+
+    if hasattr(strategy, 'ticker_interval') and not hasattr(strategy, 'timeframe'):
+        # Assign ticker_interval to timeframe to keep compatibility
+        if 'timeframe' not in config:
+            logger.warning(
+                "DEPRECATED: Please migrate to using 'timeframe' instead of 'ticker_interval'."
+                )
+            strategy.timeframe = strategy.ticker_interval
+
+    # Set attributes
+    # Check if we need to override configuration
+    #             (Attribute name,                    default,     subkey)
+    attributes = [("minimal_roi",                     {"0": 10.0}, None),
+                    ("timeframe",                       None,        None),
+                    ("stoploss",                        None,        None),
+                    ("trailing_stop",                   None,        None),
+                    ("trailing_stop_positive",          None,        None),
+                    ("trailing_stop_positive_offset",   0.0,         None),
+                    ("trailing_only_offset_is_reached", None,        None),
+                    ("use_custom_stoploss",             None,        None),
+                    ("process_only_new_candles",        None,        None),
+                    ("order_types",                     None,        None),
+                    ("order_time_in_force",             None,        None),
+                    ("stake_currency",                  None,        None),
+                    ("stake_amount",                    None,        None),
+                    ("protections",                     None,        None),
+                    ("startup_candle_count",            None,        None),
+                    ("unfilledtimeout",                 None,        None),
+                    ("use_sell_signal",                 True,        'ask_strategy'),
+                    ("sell_profit_only",                False,       'ask_strategy'),
+                    ("ignore_roi_if_buy_signal",        False,       'ask_strategy'),
+                    ("sell_profit_offset",              0.0,         'ask_strategy'),
+                    ("disable_dataframe_checks",        False,       None),
+                    ("ignore_buying_expired_candle_after",  0,       'ask_strategy')
+                    ]
+    for attribute, default, subkey in attributes:
+        if subkey:
+            StrategyResolver._override_attribute_helper(strategy, config.get(subkey, {}),
+                                                        attribute, default)
+        else:
+            StrategyResolver._override_attribute_helper(strategy, config,
+                                                        attribute, default)
+
+    # Loop this list again to have output combined
+    for attribute, _, subkey in attributes:
+        if subkey and attribute in config[subkey]:
+            logger.info("Strategy using %s: %s", attribute, config[subkey][attribute])
+        elif attribute in config:
+            logger.info("Strategy using %s: %s", attribute, config[attribute])
+
+    StrategyResolver._normalize_attributes(strategy)
+
+    StrategyResolver._strategy_sanity_validations(strategy)
+    return strategy
