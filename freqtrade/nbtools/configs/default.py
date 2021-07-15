@@ -1,4 +1,4 @@
-base_config = {
+DEFAULT = {
     "stake_currency": "USDT",
     "fiat_display_currency": "USD",
     "stake_amount": 15,
@@ -6,7 +6,11 @@ base_config = {
     "tradable_balance_ratio": 0.99,
     "fee": 0.001,
     "dry_run": True,
+    "use_sell_signal": True,
+    "sell_profit_only": False,
+    "sell_profit_offset": 0.0,
     "cancel_open_orders_on_exit": True,
+    "ignore_roi_if_buy_signal": False,
     "unfilledtimeout": {
         "buy": 30,
         "sell": 30
@@ -50,6 +54,8 @@ base_config = {
         "pair_blacklist": [
             "BNB/USDT",
             "BNB/BUSD",
+            "BTC/USDT",
+            "BTC/BUSD"
         ]
     },
     "pairlists": [

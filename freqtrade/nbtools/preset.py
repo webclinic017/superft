@@ -13,9 +13,8 @@ import rapidjson
 import json
 
 from freqtrade.enums.runmode import RunMode
-from freqtrade.nbtools import constants
+from freqtrade.nbtools import constants, configs
 
-from .config import base_config
 from .configuration import setup_optimize_configuration
 from .backtest import NbBacktesting
 from .helper import get_function_body, get_readable_date
@@ -34,6 +33,7 @@ class Preset:
     max_open_trades: int = attr.ib(default=1000)
     fee: float = attr.ib(default=0.001)
     strategy_code: Optional[str] = attr.ib(default=None, init=False)
+    path_local_preset: Optional[Path] = attr.ib(default=None, init=False)
     datadir: Optional[str] = attr.ib(default=None, kw_only=True)
     timeframe: Optional[str] = attr.ib(default=None, kw_only=True)
     timerange: Optional[str] = attr.ib(default=None, kw_only=True)
@@ -42,10 +42,10 @@ class Preset:
     def from_cloud(cloud_preset_name: str) -> Tuple["Preset", str]:
         preset_path = cloud_retrieve_preset(cloud_preset_name)
         preset_path = Path.cwd() / preset_path
-        return Preset.from_local(preset_path)
+        return Preset.from_local(preset_path, is_from_cloud=True)
     
     @staticmethod
-    def from_local(local_preset_path: Union[str, Path]) -> Tuple["Preset", str]:
+    def from_local(local_preset_path: Union[str, Path], is_from_cloud: bool = False) -> Tuple["Preset", str]:
         """ Loads preset from local folder then returns Preset and strategy code
         """
         path_local_preset: Union[str, Path] = deepcopy(local_preset_path)
@@ -77,6 +77,8 @@ class Preset:
             fee = config_dict.get("fee") or 0.001,
         )
         preset.strategy_code = strategy_code
+        if not is_from_cloud:
+            preset.path_local_preset = path_local_preset
         return preset, strategy_code
         
     def backtest_by_strategy_func(self, strategy_func: Callable[[Any], Any]) -> Tuple[dict, str]:
@@ -110,7 +112,7 @@ class Preset:
         Process config through freqtrade's config parser
         """
         # TODO: If exists, Load from "config-backtesting.json" as base config.
-        config = deepcopy(base_config)
+        config = deepcopy(configs.DEFAULT)
         update = {
             "max_open_trades": self.max_open_trades,
             "stake_amount": self.stake_amount,
@@ -162,7 +164,7 @@ class Preset:
         
         for filename, content in filename_and_content.items():
             with open(f"./.temp/{preset_name}/{filename}", mode="w") as f:
-                if filename == "config-backtesting.json":
+                if "config" in filename or filename == "metadata.json":
                     json.dump(content, f, default=str, indent=4)
                     continue
                 if filename.endswith(".json"):
@@ -171,13 +173,30 @@ class Preset:
                 f.write(content)
         
         # wandb log artifact
-        preset_log( f"./.temp/{preset_name}", constants.PROJECT_NAME_PRESETS, preset_name)
+        preset_log( f"./.temp/{preset_name}", preset_name)
         # wandb add row
         table_add_row(metadata, 
                       constants.PROJECT_NAME_PRESETS, 
                       constants.PRESETS_ARTIFACT_METADATA, 
                       constants.PRESETS_TABLEKEY_METADATA)
+
+        # (if use local preset) update local results 
+        if self.path_local_preset is not None:
+            print(f"You are backtesting a local preset `{self.path_local_preset}`")
+            print("Keep in mind that this will update backtest results (such as metadata.json, exports)")
+            print("But if you modified the strategy from notebook, it will not update the local strategy file.")
+            # local metadata
+            with (self.path_local_preset / "metadata.json").open("w") as fs:
+               json.dump(metadata, fs, default=str, indent=4)
+            # local exports/stats.json
+            with (self.path_local_preset / "exports" / "stats.json").open("w") as fs:
+               json.dump(stats, fs, default=str, indent=4)
+            # local exports/summary.txt
+            with (self.path_local_preset / "exports" / "summary.txt").open("w") as fs:
+               fs.write(summary)
         
+        print(f"Synced preset with name: {preset_name}")
+
     def _generate_metadata(self, stats: dict, name: str, current_date: str) -> dict:
         """ Generate backtesting summary in dict / json format
         """

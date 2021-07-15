@@ -9,7 +9,8 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer, String,
                         create_engine, desc, func, inspect)
 from sqlalchemy.exc import NoSuchModuleError
-from sqlalchemy.orm import Query, declarative_base, relationship, scoped_session, sessionmaker
+from sqlalchemy.orm import Query, relationship, scoped_session, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.sql.schema import UniqueConstraint
 
