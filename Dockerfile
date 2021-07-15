@@ -1,4 +1,4 @@
-FROM python:3.9.5-slim-buster as base
+FROM python:3.9.6-slim-buster as base
 
 # Setup env
 ENV LANG C.UTF-8
@@ -25,7 +25,7 @@ FROM base as python-deps
 RUN  apt-get update \
   && apt-get -y install build-essential libssl-dev git libffi-dev libgfortran5 pkg-config cmake gcc \
   && apt-get clean \
-  && pip install --upgrade pip --default-timeout=100
+  && pip install --upgrade pip
 
 # Install TA-lib
 COPY build_helpers/* /tmp/
@@ -35,8 +35,8 @@ ENV LD_LIBRARY_PATH /usr/local/lib
 # Install dependencies
 COPY --chown=ftuser:ftuser requirements.txt requirements-hyperopt.txt /freqtrade/
 USER ftuser
-RUN  pip install --user --no-cache-dir numpy --default-timeout=100 \
-  && pip install --user --no-cache-dir -r requirements-hyperopt.txt --default-timeout=100
+RUN  pip install --user --no-cache-dir numpy \
+  && pip install --user --no-cache-dir -r requirements-hyperopt.txt
 
 # Copy dependencies to runtime-image
 FROM base as runtime-image
@@ -49,9 +49,10 @@ USER ftuser
 # Install and execute
 COPY --chown=ftuser:ftuser . /freqtrade/
 
-RUN pip install -e . --user --no-cache-dir --no-build-isolation --default-timeout=100 \
+RUN pip install -e . --user --no-cache-dir --no-build-isolation \
   && mkdir /freqtrade/user_data/ \
   && freqtrade install-ui
 
 ENTRYPOINT ["freqtrade"]
-
+# Default to trade mode
+CMD [ "trade" ]

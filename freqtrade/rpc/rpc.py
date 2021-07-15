@@ -18,7 +18,7 @@ from freqtrade.enums import SellType, State
 from freqtrade.exceptions import ExchangeError, PricingError
 from freqtrade.exchange import timeframe_to_minutes, timeframe_to_msecs
 from freqtrade.loggers import bufferHandler
-from freqtrade.misc import shorten_date
+from freqtrade.misc import decimals_per_coin, shorten_date
 from freqtrade.persistence import PairLocks, Trade
 from freqtrade.persistence.models import PairLock
 from freqtrade.plugins.pairlist.pairlist_helpers import expand_pairlist
@@ -104,6 +104,7 @@ class RPC:
         val = {
             'dry_run': config['dry_run'],
             'stake_currency': config['stake_currency'],
+            'stake_currency_decimals':  decimals_per_coin(config['stake_currency']),
             'stake_amount': config['stake_amount'],
             'max_open_trades': (config['max_open_trades']
                                 if config['max_open_trades'] != float('inf') else -1),
@@ -380,7 +381,7 @@ class RPC:
             )
             profit_all_ratio.append(profit_ratio)
 
-        best_pair = Trade.get_best_pair()
+        best_pair = Trade.get_best_pair(start_date)
 
         # Prepare data to display
         profit_closed_coin_sum = round(sum(profit_closed_coin), 8)
@@ -760,7 +761,7 @@ class RPC:
         sell_signals = 0
         if has_content:
 
-            dataframe.loc[:, '__date_ts'] = dataframe.loc[:, 'date'].astype(int64) // 1000 // 1000
+            dataframe.loc[:, '__date_ts'] = dataframe.loc[:, 'date'].view(int64) // 1000 // 1000
             # Move open to seperate column when signal for easy plotting
             if 'buy' in dataframe.columns:
                 buy_mask = (dataframe['buy'] == 1)

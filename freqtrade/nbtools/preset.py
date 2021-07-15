@@ -104,7 +104,7 @@ class Preset:
     
     def _get_configs(self) -> Tuple[dict, dict]:
         """Editable config.json"""
-        # TODO: Download if datadir startswith "wandb"
+        # TODO: Load from "config-backtesting.json" as base config.
         config = deepcopy(base_config)
         config["max_open_trades"] = self.max_open_trades
         config["stake_amount"] = self.stake_amount

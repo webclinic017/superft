@@ -1,14 +1,14 @@
 base_config = {
     "stake_currency": "USDT",
     "fiat_display_currency": "USD",
-    "stake_amount": 0,
-    "max_open_trades": 0,
+    "stake_amount": 15,
+    "max_open_trades": 6,
     "tradable_balance_ratio": 0.99,
     "fee": 0.001,
     "dry_run": True,
     "cancel_open_orders_on_exit": True,
     "unfilledtimeout": {
-        "buy": 10,
+        "buy": 30,
         "sell": 30
     },
     "bid_strategy": {
@@ -24,11 +24,7 @@ base_config = {
     "ask_strategy": {
         "price_side": "ask",
         "use_order_book": True,
-        "order_book_min": 1,
-        "order_book_max": 1,
-        "use_sell_signal": True,
-        "sell_profit_only": False,
-        "ignore_roi_if_buy_signal": False
+        "order_book_top": 1
     },
     "order_types": {
         "buy": "limit",
