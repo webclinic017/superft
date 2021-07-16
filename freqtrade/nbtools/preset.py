@@ -189,15 +189,9 @@ class Preset:
 
         # (if use local preset) update local results
         if self.path_local_preset is not None:
-            print(
-                f"You are backtesting a local preset `{self.path_local_preset}`"
-            )
-            print(
-                "This will update backtest results (such as metadata.json, exports)"
-            )
-            print(
-                "Updating strategy via function will not update the strategy file"
-            )
+            print(f"You are backtesting a local preset `{self.path_local_preset}`")
+            print("This will update backtest results (such as metadata.json, exports)")
+            print("Updating strategy via function will not update the strategy file")
             # local metadata
             with (self.path_local_preset / "metadata.json").open("w") as fs:
                 json.dump(metadata, fs, default=str, indent=4)
