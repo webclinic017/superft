@@ -65,8 +65,8 @@ class Preset:
             exchange=config_dict["exchange"]["name"],
             timeframe=config_dict.get("timeframe") or metadata_dict.get("timeframe") or None,
             timerange=config_dict.get("timerange")
-            or metadata_dict.get("timerange")
-            or "[ PLEASE ENTER TIMERANGE ]",
+                or metadata_dict.get("timerange")
+                or "[ PLEASE ENTER TIMERANGE ]",
             stake_amount=config_dict["stake_amount"],
             pairs=config_dict["exchange"]["pair_whitelist"],
             starting_balance=config_dict.get("dry_run_wallet") or 1000,
@@ -140,15 +140,6 @@ class Preset:
         config_editable: dict,
         config_optimize: dict,
     ):
-        """
-        Don't upload anything if anything error.
-        Upload:
-        - metadata.json (contains backtesting parameters defined in notebook)
-        - config_backtesting.json
-        - strategies/strategy.py (Strategy code extracted from function by the help of inspect)
-        - exports/stats.json
-        - exports/summary.txt (The ones in terminal you see after backtesting)
-        """
         current_date = get_readable_date()
         preset_name = f"{self.name}__backtest-{current_date}"
         metadata = self._generate_metadata(stats, preset_name, current_date)
@@ -224,35 +215,23 @@ class Preset:
 
         metadata = {
             "preset_name": name,
-            "backtest_date": current_date.split("_")[0]
-            + " "
-            + current_date.split("_")[1].replace("-", ":"),
+            "backtest_date": current_date.split("_")[0] + " " + current_date.split("_")[1].replace("-", ":"),
             "leverage": 1,
             "direction": "long",
             "is_hedging": False,
             "num_pairs": len(trades_summary["pairlist"]),
             "data_source": self.exchange,
             "win_rate": trades_summary["wins"] / trades_summary["total_trades"],
-            "avg_profit_winners_abs": trades.loc[trades["profit_abs"] >= 0, "profit_abs"]
-            .dropna()
-            .mean(),
-            "avg_profit_losers_abs": trades.loc[trades["profit_abs"] < 0, "profit_abs"]
-            .dropna()
-            .mean(),
-            "sum_profit_winners_abs": trades.loc[trades["profit_abs"] >= 0, "profit_abs"]
-            .dropna()
-            .sum(),
-            "sum_profit_losers_abs": trades.loc[trades["profit_abs"] < 0, "profit_abs"]
-            .dropna()
-            .sum(),
+            "avg_profit_winners_abs": trades.loc[trades["profit_abs"] >= 0, "profit_abs"].dropna().mean(),
+            "avg_profit_losers_abs": trades.loc[trades["profit_abs"] < 0, "profit_abs"].dropna().mean(),
+            "sum_profit_winners_abs": trades.loc[trades["profit_abs"] >= 0, "profit_abs"].dropna().sum(),
+            "sum_profit_losers_abs": trades.loc[trades["profit_abs"] < 0, "profit_abs"].dropna().sum(),
             "profit_mean_abs": trades_summary["profit_total_abs"] / trades_summary["total_trades"],
-            "profit_per_drawdown": trades_summary["profit_total_abs"]
-            / abs(trades_summary["max_drawdown_abs"]),
+            "profit_per_drawdown": trades_summary["profit_total_abs"] / abs(trades_summary["max_drawdown_abs"]),
         }
         metadata.update(
             {
-                "profit_factor": metadata["sum_profit_winners_abs"]
-                / abs(metadata["sum_profit_losers_abs"]),
+                "profit_factor": metadata["sum_profit_winners_abs"] / abs(metadata["sum_profit_losers_abs"]),
                 "expectancy_abs": (
                     (metadata["win_rate"] * metadata["avg_profit_winners_abs"])
                     + ((1 - metadata["win_rate"]) * metadata["avg_profit_losers_abs"])

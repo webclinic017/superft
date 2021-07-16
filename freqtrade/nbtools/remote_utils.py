@@ -8,10 +8,12 @@ import pandas as pd
 from pandas import DataFrame
 
 import wandb
+import logging
 from freqtrade.nbtools import constants
 
 
 os.environ["WANDB_SILENT"] = "true"
+logger = logging.getLogger(__name__)
 
 
 """
@@ -33,11 +35,10 @@ class Memoize:
         return self.memo[args]
 
 
-def preset_log(preset_directory: str, preset_name: str):
-    with wandb.init(project=constants.PROJECT_NAME_PRESETS, job_type="load-data") as run:
-        artifact = wandb.Artifact(preset_name, type="preset")
-        artifact.add_dir(f"./{preset_directory}", name=preset_name)
-        run.log_artifact(artifact)
+def preset_log(run, preset_directory: str, preset_name: str):
+    artifact = wandb.Artifact(preset_name, type="preset")
+    artifact.add_dir(f"./{preset_directory}", name=preset_name)
+    run.log_artifact(artifact)
 
 
 def table_retrieve(project: str, artifact_name: str, table_key: str) -> pd.DataFrame:
@@ -46,39 +47,37 @@ def table_retrieve(project: str, artifact_name: str, table_key: str) -> pd.DataF
         return pd.DataFrame(my_table.data, columns=my_table.columns)
 
 
-def table_add_row(row_dict: dict, project: str, artifact_name: str, table_key: str):
+def table_add_row(run, row_dict: dict, project: str, artifact_name: str, table_key: str):
+    cloud_table = run.use_artifact(f"{artifact_name}:latest").get(f"{table_key}")
+    cloud_df = pd.DataFrame(cloud_table.data, columns=cloud_table.columns)
 
-    with wandb.init(project=project) as run:
-        cloud_table = run.use_artifact(f"{artifact_name}:latest").get(f"{table_key}")
-        cloud_df = pd.DataFrame(cloud_table.data, columns=cloud_table.columns)
+    real_cols = list(cloud_df.columns)
+    input_cols = list(row_dict.keys())
+    real_cols.sort()
+    input_cols.sort()
+    
+    if real_cols != input_cols:
+        added_cols = list(set(input_cols) - set(real_cols))
+        removed_cols = list(set(real_cols) - set(input_cols))
 
-        real_cols = list(cloud_df.columns)
-        input_cols = list(row_dict.keys())
-        real_cols.sort()
-        input_cols.sort()
+        print("Columns are not identical.")
+        print("Added columns  :", added_cols)
+        print("Removed columns:", removed_cols)
 
-        if real_cols != input_cols:
-            added_cols = list(set(input_cols) - set(real_cols))
-            removed_cols = list(set(real_cols) - set(input_cols))
+        if len(added_cols) > 0:
+            print("Create newly added columns, leaving older data values to its column: 'old'.")
 
-            print("Columns are not identical.")
-            print("Added columns  :", added_cols)
-            print("Removed columns:", removed_cols)
+            for col in added_cols:
+                cloud_df[col] = "old"
 
-            if len(added_cols) > 0:
-                print("Create newly added columns, leaving older data values to its column: 'old'.")
+            table_update(cloud_df, project, artifact_name, table_key)
+            cloud_table = run.use_artifact(f"{artifact_name}:latest").get(f"{table_key}")
 
-                for col in added_cols:
-                    cloud_df[col] = "old"
+        elif len(removed_cols) > 0:
+            print("Insert value to removed column: 'rem'.")
 
-                table_update(cloud_df, project, artifact_name, table_key)
-                return table_add_row(row_dict, project, artifact_name, table_key)
-
-            elif len(removed_cols) > 0:
-                print("Insert value to removed column: 'rem'.")
-
-                for col in removed_cols:
-                    row_dict[col] = "rem"
+            for col in removed_cols:
+                row_dict[col] = "rem"
 
         cloud_table.add_data(*[row_dict[col] for col in cloud_table.columns])
         cloud_table = pd.DataFrame(cloud_table.data, columns=cloud_table.columns)
