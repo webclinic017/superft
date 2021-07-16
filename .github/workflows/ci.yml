@@ -46,7 +46,7 @@ jobs:
     - name: TA binary *nix
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        sudo sh -c 'cd build_helpers && ./install_ta-lib.sh ${HOME}/dependencies/; cd ..'
+        cd build_helpers && ./install_ta-lib.sh ${HOME}/dependencies/; cd ..
 
     - name: Installation - *nix
       run: |
