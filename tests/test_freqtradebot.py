@@ -397,7 +397,7 @@ def test_create_trade_minimal_amount(default_conf, ticker, limit_buy_order_open,
 
 
 def test_create_trade_too_small_stake_amount(default_conf, ticker, limit_buy_order_open,
-                                             fee, mocker) -> None:
+                                             fee, mocker, caplog) -> None:
     patch_RPCManager(mocker)
     patch_exchange(mocker)
     buy_mock = MagicMock(return_value=limit_buy_order_open)
@@ -410,6 +410,27 @@ def test_create_trade_too_small_stake_amount(default_conf, ticker, limit_buy_ord
 
     freqtrade = FreqtradeBot(default_conf)
     freqtrade.config['stake_amount'] = 0.000000005
+
+    patch_get_signal(freqtrade)
+
+    assert freqtrade.create_trade('ETH/BTC')
+    assert log_has_re(r"Stake amount for pair .* is too small.*", caplog)
+
+
+def test_create_trade_zero_stake_amount(default_conf, ticker, limit_buy_order_open,
+                                        fee, mocker) -> None:
+    patch_RPCManager(mocker)
+    patch_exchange(mocker)
+    buy_mock = MagicMock(return_value=limit_buy_order_open)
+    mocker.patch.multiple(
+        'freqtrade.exchange.Exchange',
+        fetch_ticker=ticker,
+        buy=buy_mock,
+        get_fee=fee,
+    )
+
+    freqtrade = FreqtradeBot(default_conf)
+    freqtrade.config['stake_amount'] = 0
 
     patch_get_signal(freqtrade)
 
@@ -841,6 +862,24 @@ def test_execute_buy(mocker, default_conf, fee, limit_buy_order, limit_buy_order
     assert trade.open_order_id == '555'
     assert trade.open_rate == 0.5
     assert trade.stake_amount == 40.495905365
+
+    # Test with custom stake
+    limit_buy_order['status'] = 'open'
+    limit_buy_order['id'] = '556'
+
+    freqtrade.strategy.custom_stake_amount = lambda **kwargs: 150.0
+    assert freqtrade.execute_buy(pair, stake_amount)
+    trade = Trade.query.all()[4]
+    assert trade
+    assert trade.stake_amount == 150
+
+    # Exception case
+    limit_buy_order['id'] = '557'
+    freqtrade.strategy.custom_stake_amount = lambda **kwargs: 20 / 0
+    assert freqtrade.execute_buy(pair, stake_amount)
+    trade = Trade.query.all()[5]
+    assert trade
+    assert trade.stake_amount == 2.0
 
     # In case of the order is rejected and not filled at all
     limit_buy_order['status'] = 'rejected'
@@ -2960,11 +2999,11 @@ def test_sell_profit_only_enable_profit(default_conf, limit_buy_order, limit_buy
         buy=MagicMock(return_value=limit_buy_order_open),
         get_fee=fee,
     )
-    default_conf['ask_strategy'] = {
+    default_conf.update({
         'use_sell_signal': True,
         'sell_profit_only': True,
         'sell_profit_offset': 0.1,
-    }
+    })
     freqtrade = FreqtradeBot(default_conf)
     patch_get_signal(freqtrade)
     freqtrade.strategy.min_roi_reached = MagicMock(return_value=False)
@@ -2977,7 +3016,7 @@ def test_sell_profit_only_enable_profit(default_conf, limit_buy_order, limit_buy
     patch_get_signal(freqtrade, value=(False, True))
     assert freqtrade.handle_trade(trade) is False
 
-    freqtrade.config['ask_strategy']['sell_profit_offset'] = 0.0
+    freqtrade.strategy.sell_profit_offset = 0.0
     assert freqtrade.handle_trade(trade) is True
 
     assert trade.sell_reason == SellType.SELL_SIGNAL.value
@@ -2997,10 +3036,10 @@ def test_sell_profit_only_disable_profit(default_conf, limit_buy_order, limit_bu
         buy=MagicMock(return_value=limit_buy_order_open),
         get_fee=fee,
     )
-    default_conf['ask_strategy'] = {
+    default_conf.update({
         'use_sell_signal': True,
         'sell_profit_only': False,
-    }
+    })
     freqtrade = FreqtradeBot(default_conf)
     patch_get_signal(freqtrade)
     freqtrade.strategy.min_roi_reached = MagicMock(return_value=False)
@@ -3028,10 +3067,10 @@ def test_sell_profit_only_enable_loss(default_conf, limit_buy_order, limit_buy_o
         buy=MagicMock(return_value=limit_buy_order_open),
         get_fee=fee,
     )
-    default_conf['ask_strategy'] = {
+    default_conf.update({
         'use_sell_signal': True,
         'sell_profit_only': True,
-    }
+    })
     freqtrade = FreqtradeBot(default_conf)
     patch_get_signal(freqtrade)
     freqtrade.strategy.stop_loss_reached = MagicMock(return_value=SellCheckTuple(
@@ -3058,10 +3097,10 @@ def test_sell_profit_only_disable_loss(default_conf, limit_buy_order, limit_buy_
         buy=MagicMock(return_value=limit_buy_order_open),
         get_fee=fee,
     )
-    default_conf['ask_strategy'] = {
+    default_conf.update({
         'use_sell_signal': True,
         'sell_profit_only': False,
-    }
+    })
 
     freqtrade = FreqtradeBot(default_conf)
     patch_get_signal(freqtrade)
@@ -3209,9 +3248,8 @@ def test_ignore_roi_if_buy_signal(default_conf, limit_buy_order, limit_buy_order
         buy=MagicMock(return_value=limit_buy_order_open),
         get_fee=fee,
     )
-    default_conf['ask_strategy'] = {
-        'ignore_roi_if_buy_signal': True
-    }
+    default_conf['ignore_roi_if_buy_signal'] = True
+
     freqtrade = FreqtradeBot(default_conf)
     patch_get_signal(freqtrade)
     freqtrade.strategy.min_roi_reached = MagicMock(return_value=True)
@@ -3990,8 +4028,7 @@ def test_order_book_ask_strategy(default_conf, limit_buy_order_open, limit_buy_o
     mocker.patch('freqtrade.exchange.Exchange.fetch_l2_order_book', order_book_l2)
     default_conf['exchange']['name'] = 'binance'
     default_conf['ask_strategy']['use_order_book'] = True
-    default_conf['ask_strategy']['order_book_min'] = 1
-    default_conf['ask_strategy']['order_book_max'] = 2
+    default_conf['ask_strategy']['order_book_top'] = 1
     default_conf['telegram']['enabled'] = False
     patch_RPCManager(mocker)
     patch_exchange(mocker)
@@ -4027,7 +4064,8 @@ def test_order_book_ask_strategy(default_conf, limit_buy_order_open, limit_buy_o
                  return_value={'bids': [[]], 'asks': [[]]})
     with pytest.raises(PricingError):
         freqtrade.handle_trade(trade)
-    assert log_has('Sell Price at location 1 from orderbook could not be determined.', caplog)
+    assert log_has_re(r'Sell Price at location 1 from orderbook could not be determined\..*',
+                      caplog)
 
 
 def test_startup_state(default_conf, mocker):

@@ -3,9 +3,7 @@ from freqtrade.strategy.interface import IStrategy
 
 class INbStrategy(IStrategy):
     INTERFACE_VERSION = 2
-    minimal_roi = {
-        "0": 9999
-    }
+    minimal_roi = {"0": 9999}
     stoploss = -0.99
     trailing_stop = False
     # trailing_only_offset_is_reached = False
@@ -22,13 +20,10 @@ class INbStrategy(IStrategy):
     startup_candle_count: int = 800
     # Optional order type mapping.
     order_types = {
-        'buy': 'limit',
-        'sell': 'limit',
-        'stoploss': 'market',
-        'stoploss_on_exchange': False
+        "buy": "limit",
+        "sell": "limit",
+        "stoploss": "market",
+        "stoploss_on_exchange": False,
     }
     # Optional order time in force.
-    order_time_in_force = {
-        'buy': 'gtc',
-        'sell': 'gtc'
-    }
+    order_time_in_force = {"buy": "gtc", "sell": "gtc"}

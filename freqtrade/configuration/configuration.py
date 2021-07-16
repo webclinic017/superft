@@ -15,7 +15,7 @@ from freqtrade.configuration.load_config import load_config_file, load_file
 from freqtrade.enums import NON_UTIL_MODES, TRADING_MODES, RunMode
 from freqtrade.exceptions import OperationalException
 from freqtrade.loggers import setup_logging
-from freqtrade.misc import deep_merge_dicts
+from freqtrade.misc import deep_merge_dicts, parse_db_uri_for_logging
 
 
 logger = logging.getLogger(__name__)
@@ -77,6 +77,7 @@ class Configuration:
             config['internals'] = {}
         if 'ask_strategy' not in config:
             config['ask_strategy'] = {}
+
         if 'pairlists' not in config:
             config['pairlists'] = []
 
@@ -93,22 +94,28 @@ class Configuration:
         # Keep a copy of the original configuration file
         config['original_config'] = deepcopy(config)
 
-        self._process_config(config)
-        
-        return config
-
-    def _process_config(self, config: Dict[str, Any]) -> None:
         self._process_logging_options(config)
+
         self._process_runmode(config)
+
         self._process_common_options(config)
+
         self._process_trading_options(config)
+
         self._process_optimize_options(config)
+
         self._process_plot_options(config)
+
         self._process_data_options(config)
+
         # Check if the exchange set by the user is supported
         check_exchange(config, config.get('experimental', {}).get('block_bad_exchanges', True))
+
         self._resolve_pairs_list(config)
+
         process_temporary_deprecated_settings(config)
+
+        return config
 
     def _process_logging_options(self, config: Dict[str, Any]) -> None:
         """
@@ -137,7 +144,7 @@ class Configuration:
                 config['db_url'] = constants.DEFAULT_DB_PROD_URL
             logger.info('Dry run is disabled')
 
-        logger.info(f'Using DB: "{config["db_url"]}"')
+        logger.info(f'Using DB: "{parse_db_uri_for_logging(config["db_url"])}"')
 
     def _process_common_options(self, config: Dict[str, Any]) -> None:
 
@@ -253,6 +260,8 @@ class Configuration:
         self._args_to_config(config, argname='export',
                              logstring='Parameter --export detected: {} ...')
 
+        self._args_to_config(config, argname='disableparamexport',
+                             logstring='Parameter --disableparamexport detected: {} ...')
         # Edge section:
         if 'stoploss_range' in self.args and self.args["stoploss_range"]:
             txt_range = eval(self.args["stoploss_range"])

@@ -1,35 +1,25 @@
-base_config = {
+DEFAULT = {
     "stake_currency": "USDT",
     "fiat_display_currency": "USD",
-    "stake_amount": 0,
-    "max_open_trades": 0,
+    "stake_amount": 15,
+    "max_open_trades": 6,
     "tradable_balance_ratio": 0.99,
     "fee": 0.001,
     "dry_run": True,
+    "use_sell_signal": True,
+    "sell_profit_only": False,
+    "sell_profit_offset": 0.0,
     "cancel_open_orders_on_exit": True,
-    "unfilledtimeout": {
-        "buy": 10,
-        "sell": 30
-    },
+    "ignore_roi_if_buy_signal": False,
+    "unfilledtimeout": {"buy": 30, "sell": 30},
     "bid_strategy": {
         "price_side": "bid",
         "ask_last_balance": 0.0,
         "use_order_book": True,
         "order_book_top": 1,
-        "check_depth_of_market": {
-            "enabled": False,
-            "bids_to_ask_delta": 1
-        }
+        "check_depth_of_market": {"enabled": False, "bids_to_ask_delta": 1},
     },
-    "ask_strategy": {
-        "price_side": "ask",
-        "use_order_book": True,
-        "order_book_min": 1,
-        "order_book_max": 1,
-        "use_sell_signal": True,
-        "sell_profit_only": False,
-        "ignore_roi_if_buy_signal": False
-    },
+    "ask_strategy": {"price_side": "ask", "use_order_book": True, "order_book_top": 1},
     "order_types": {
         "buy": "limit",
         "sell": "limit",
@@ -37,28 +27,18 @@ base_config = {
         "emergencysell": "market",
         "stoploss": "market",
         "stoploss_on_exchange": False,
-        "stoploss_on_exchange_interval": 60
+        "stoploss_on_exchange_interval": 60,
     },
     "exchange": {
         "name": "",
         "key": "your_exchange_key",
         "secret": "your_exchange_secret",
         "ccxt_config": {"enableRateLimit": True},
-        "ccxt_async_config": {
-            "enableRateLimit": True,
-            "rateLimit": 200
-        },
-        "pair_whitelist": [
-            
-        ],
-        "pair_blacklist": [
-            "BNB/USDT",
-            "BNB/BUSD",
-        ]
+        "ccxt_async_config": {"enableRateLimit": True, "rateLimit": 200},
+        "pair_whitelist": [],
+        "pair_blacklist": ["BNB/USDT", "BNB/BUSD", "BTC/USDT", "BTC/BUSD"],
     },
-    "pairlists": [
-        {"method": "StaticPairList"}
-    ],
+    "pairlists": [{"method": "StaticPairList"}],
     "edge": {
         "enabled": False,
         "process_throttle_secs": 3600,
@@ -71,12 +51,12 @@ base_config = {
         "minimum_expectancy": 0.20,
         "min_trade_number": 10,
         "max_trade_duration_minute": 1440,
-        "remove_pumps": False
+        "remove_pumps": False,
     },
     "telegram": {
         "enabled": False,
         "token": "your_telegram_token",
-        "chat_id": "your_telegram_chat_id"
+        "chat_id": "your_telegram_chat_id",
     },
     "api_server": {
         "enabled": False,
@@ -86,12 +66,10 @@ base_config = {
         "jwt_secret_key": "somethingrandom",
         "CORS_origins": [],
         "username": "freqtrader",
-        "password": "SuperSecurePassword"
+        "password": "SuperSecurePassword",
     },
     "bot_name": "freqtrade",
     "initial_state": "running",
     "forcebuy_enable": False,
-    "internals": {
-        "process_throttle_secs": 5
-    }
+    "internals": {"process_throttle_secs": 5},
 }
