@@ -60,12 +60,12 @@ def table_add_row(run, row_dict: dict, project: str, artifact_name: str, table_k
         added_cols = list(set(input_cols) - set(real_cols))
         removed_cols = list(set(real_cols) - set(input_cols))
 
-        print("Columns are not identical.")
-        print("Added columns  :", added_cols)
-        print("Removed columns:", removed_cols)
+        logger.warning("Columns are not identical.")
+        logger.warning("New columns  :", added_cols)
+        logger.warning("Removed columns:", removed_cols)
 
         if len(added_cols) > 0:
-            print("Create newly added columns, leaving older data values to its column: 'old'.")
+            logger.warning("Create newly added columns, leaving older data values to its column: 'old'")
 
             for col in added_cols:
                 cloud_df[col] = "old"
@@ -74,7 +74,7 @@ def table_add_row(run, row_dict: dict, project: str, artifact_name: str, table_k
             cloud_table = run.use_artifact(f"{artifact_name}:latest").get(f"{table_key}")
 
         elif len(removed_cols) > 0:
-            print("Insert value to removed column: 'rem'.")
+            logger.warning("Inserting 'rem' to removed column")
 
             for col in removed_cols:
                 row_dict[col] = "rem"
@@ -96,8 +96,7 @@ def table_update(new_df: pd.DataFrame, project: str, artifact_name: str, table_k
             my_table = pd.DataFrame(my_table.data, columns=my_table.columns)
             assert list(my_table.columns) == list(new_df.columns)
         except Exception as e:
-            print(e)
-            print("Creating new table...")
+            logger.info("Table not exists. Creating new table...")
 
         my_table = wandb.Table(dataframe=new_df)
         table_artifact = wandb.Artifact(artifact_name, type="table")
@@ -110,7 +109,7 @@ def cloud_retrieve_preset(preset_name: str) -> Any:
     then load it.
     The goal of Saving presets are for:
     - Reproducibility
-    - Easy integration to live / dry runis
+    - Easy integration to live / dry run
     (Download preset artifact -> insert big file -> Reroute big file in strategy.py)
     """
     with wandb.init(project=constants.PROJECT_NAME_PRESETS, job_type="load-data") as run:
