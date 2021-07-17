@@ -13,12 +13,12 @@ logger = logging.getLogger(__name__)
 
 @attr.s
 class LocalPreset(BasePreset):
-    path_local_preset: Path = attr.ib(type=Path)
-    name: str = attr.ib(type=str, init=False)
-    default_strategy_code: str = attr.ib(type=str, init=False)
+    path_local_preset: Path = attr.ib()
+    name: str = attr.ib(init=False)
+    default_strategy_code: str = attr.ib(init=False)
 
     def __attrs_post_init__(self):
-        logger.debug(f"Preparing LocalPreset for `{self.name}`")
+        logger.debug(f"Preparing LocalPreset for `{self.path_local_preset}`")
         logger.debug(f"Using path local preset: {self.path_local_preset}")
 
         with (self.path_local_preset / "strategies" / "strategy.py").open("r") as fs:

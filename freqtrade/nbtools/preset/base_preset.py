@@ -13,25 +13,43 @@ logger = logging.getLogger(__name__)
 
 @attr.s
 class BasePreset(ABC):
+    """ Preset to be synced every backtest.
+        Optional parameters:
+        - pairs: List[str]
+        - exchange: str
+        - starting_balance: int
+        - stake_amount: int
+        - max_open_trades: int
+        - fee: float
+        You can overwrite them using preset.overwrite_config()
+    """
     # Basic Parameters
-    name: str = attr.ib(type=str)
-    path_data: Path = attr.ib(type=Path)
+    name: str = attr.ib()
+    path_data: Path = attr.ib()
     # Must Input Backtesting Parameters
-    timerange: str = attr.ib(type=str)
+    timerange: str = attr.ib()
     # Optional but Customizable Parameters. Overwrites the cloud config but not local.
-    pairs: Optional[List[str]] = attr.ib(type=Optional[List[str]])
-    exchange: Optional[str] = attr.ib(type=Optional[str])
-    starting_balance: Optional[float] = attr.ib(type=Optional[float])
-    stake_amount: Optional[float] = attr.ib(type=Optional[float])
-    max_open_trades: Optional[int] = attr.ib(type=Optional[int])
-    fee: Optional[float] = attr.ib(type=Optional[float])
+    pairs: Optional[List[str]] = attr.ib(init=False)
+    exchange: Optional[str] = attr.ib(init=False)
+    starting_balance: Optional[float] = attr.ib(init=False)
+    stake_amount: Optional[float] = attr.ib(init=False)
+    max_open_trades: Optional[int] = attr.ib(init=False)
+    fee: Optional[float] = attr.ib(init=False)
+
+    def __attrs_pre_init__(self):
+        setattr(self, "pairs", None)
+        setattr(self, "exchange", None)
+        setattr(self, "starting_balance", None)
+        setattr(self, "stake_amount", None)
+        setattr(self, "max_open_trades", None)
+        setattr(self, "fee", None)
 
     def get_config_optimize(self, config_backtesting: dict) -> dict:
         """ Overwrite config_backtesting (if any overwrites) then get the configuration 
             for the optimize module
         """
         logger.info(f"Setting config for {self.name} ...")
-
+        
         if self.pairs is not None:
             logger.info(
                 f"Overwriting pairs (from {len(config_backtesting['exchange']['pair_whitelist'])} to {len(self.pairs)} pairs)"
@@ -62,11 +80,24 @@ class BasePreset(ABC):
             "datadir": self.path_data / config_backtesting["exchange"]["name"],
             "timerange": self.timerange,
         }
-
+        
         logger.info(f"Setting arg `datadir` to {args['datadir']}")
         logger.info(f"Setting arg `timerange` to {args['timerange']}")
 
         return setup_optimize_configuration(config_backtesting, args, RunMode.BACKTEST)
+
+    def overwrite_config(self, 
+                         pairs: Optional[List[str]] = None,
+                         exchange: Optional[str] = None,
+                         starting_balance: Optional[float] = None,
+                         stake_amount: Optional[float] = None,
+                         max_open_trades: Optional[int] = None,
+                         fee: Optional[float] = None,
+                         ):
+        # Loop through this function args, set key if not None
+        for key, value in locals().items():
+            if value is not None:
+                setattr(self, key, value)
 
     @abstractmethod
     def get_configs(self) -> Tuple[dict, dict]:

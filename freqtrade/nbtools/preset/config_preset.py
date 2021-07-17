@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 @attr.s
 class ConfigPreset(BasePreset):
-    config_dict: dict = attr.ib(type=dict)
-
+    config_dict: dict = attr.ib()
+   
     def get_configs(self) -> Tuple[dict, dict]:
         """ Returns (config_backtesting, config_optimize)
         """

@@ -30,7 +30,7 @@ DEFAULT = {
         "stoploss_on_exchange_interval": 60,
     },
     "exchange": {
-        "name": "",
+        "name": "binance",
         "key": "your_exchange_key",
         "secret": "your_exchange_secret",
         "ccxt_config": {"enableRateLimit": True},

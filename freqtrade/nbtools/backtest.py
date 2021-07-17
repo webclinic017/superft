@@ -207,7 +207,7 @@ def log_preset(preset: BasePreset, strategy_code: str, stats: dict, config_backt
     """ Upload preset to cloud WandB. """
     current_date = get_readable_date()
     preset_name = f"{preset.name}__backtest-{current_date}"
-    metadata = generate_metadata(preset, stats, config_backtesting, current_date)
+    metadata = generate_metadata(preset, stats, config_backtesting, config_optimize, current_date)
     
     filename_and_content = {
         "metadata.json": metadata,
@@ -233,7 +233,7 @@ def log_preset(preset: BasePreset, strategy_code: str, stats: dict, config_backt
             if isinstance(content, str):
                 f.write(content)
      
-    with wandb.init(project=constants.PROJECT_NAME_PRESETS, job_type="load-data") as run:
+    with wandb.init(project=constants.PROJECT_NAME_PRESETS) as run:
         # wandb log artifact TODO: log artifact and add row in one go
         preset_log(run, f"./.temp/{preset_name}", preset_name)
         # wandb add row
@@ -262,22 +262,31 @@ def log_preset(preset: BasePreset, strategy_code: str, stats: dict, config_backt
     print(f"with random name: {metadata['random_name']}\n")
 
 
-def generate_metadata(preset: BasePreset, stats: Dict[str, Any], config_backtesting: dict, current_date: str) -> Dict[str, Any]:
-    """Generate backtesting summary in dict to be exported in json format"""
+def generate_metadata(
+    preset: BasePreset, 
+    stats: Dict[str, Any], 
+    config_backtesting: dict, 
+    config_optimize: dict, 
+    current_date: str) -> Dict[str, Any]:
+    """
+    Generate backtesting summary in dict to be exported in json format
+    """
     trades = pd.DataFrame(deepcopy(stats["strategy"]["NotebookStrategy"]["trades"]))
     trades_summary = deepcopy(stats["strategy"]["NotebookStrategy"])
+    current_date_fmt = current_date.split("_")[0] + " " + current_date.split("_")[1].replace("-", ":")
     
     # You can add or remove any columns you want here
     metadata = {
         "random_name": get_random_name(),
-        "preset_name": preset.name,
+        "preset_name": f"{preset.name}__backtest-{current_date}",
         "preset_type": preset.__class__.__name__,
-        "backtest_date": current_date.split("_")[0] + " " + current_date.split("_")[1].replace("-", ":"),
+        "backtest_date": current_date_fmt,
         "leverage": 1,  # TODO
         "direction": "long",  # TODO
         "is_hedging": False,  # TODO
-        "num_pairs": len(trades_summary.get("pairlist")),
-        "data_source": config_backtesting.get("exchange").get("name"),
+        "fee": config_optimize["fee"],
+        "num_pairs": len(trades_summary["pairlist"]),
+        "data_source": config_backtesting["exchange"]["name"],
         "win_rate": trades_summary["wins"] / trades_summary["total_trades"],
         "avg_profit_winners_abs": trades.loc[trades["profit_abs"] >= 0, "profit_abs"].dropna().mean(),
         "avg_profit_losers_abs": trades.loc[trades["profit_abs"] < 0, "profit_abs"].dropna().mean(),
@@ -298,16 +307,18 @@ def generate_metadata(preset: BasePreset, stats: Dict[str, Any], config_backtest
     )
 
     # Filter out "too long for table" data
-    for key, value in trades_summary.items():
+    for key in list(trades_summary):
+        value = trades_summary[key]
+        
         is_valid_type = any(
             [isinstance(value, it) for it in (str, int, float, bool)] + [value is None],
         )
         
         if not is_valid_type:
             trades_summary[key] = str(value)
-        
-        if len(trades_summary[key]) > 100:
-            del trades_summary[key]
+            
+            if len(trades_summary[key]) > 30:
+                del trades_summary[key]
 
     return {**metadata, **trades_summary}
 

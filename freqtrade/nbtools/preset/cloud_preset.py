@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 @attr.s
 class CloudPreset(BasePreset):
-    default_strategy_code: str = attr.ib(type=str, init=False)
-    path_to_preset: Path = attr.ib(type=Path, init=False)
+    default_strategy_code: str = attr.ib(init=False)
+    path_to_preset: Path = attr.ib(init=False)
 
     def __attrs_post_init__(self):
         logger.debug(f"Preparing CloudPreset for `{self.name}`")
@@ -26,7 +26,10 @@ class CloudPreset(BasePreset):
             self.default_strategy_code = fs.read()
             logger.debug(f"Detected default strategy with {len(self.default_strategy_code.splitlines())} lines")
 
-        self.name = self.name.split("__")[0]
+        if "__" in self.name:
+            self.name = self.name.split("__")[0]
+        
+        self.path_to_preset = preset_path
 
     def get_configs(self) -> Tuple[dict, dict]:
         """ Returns (config_backtesting, config_optimize)

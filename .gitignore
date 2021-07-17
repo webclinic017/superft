@@ -12,6 +12,9 @@ freqtrade/rpc/api_server/ui/*
 .temp/
 artifacts/
 wandb/
+tests/testdata/preset-test/exports/*
+tests/testdata/preset-test/backtest_results/*
+
 
 
 # Byte-compiled / optimized / DLL files
