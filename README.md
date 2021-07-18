@@ -52,7 +52,7 @@ def strategy_func():
     import talib.abstract as ta
 
     class NotebookStrategy(INbStrategy):
-				# These attributes are REQUIRED!
+	# These attributes are REQUIRED!
         timeframe = "15m"
         minimal_roi = {"0": 0.02, "30": 0.01}
         stoploss = -0.01 
