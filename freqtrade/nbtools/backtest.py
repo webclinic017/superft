@@ -208,6 +208,7 @@ def log_preset(preset: BasePreset, strategy_code: str, stats: dict, config_backt
     current_date = get_readable_date()
     preset_name = f"{preset.name}__backtest-{current_date}"
     metadata = generate_metadata(preset, stats, config_backtesting, config_optimize, current_date)
+    stats["metadata"] = metadata
     
     filename_and_content = {
         "metadata.json": metadata,

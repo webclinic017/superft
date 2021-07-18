@@ -35,8 +35,15 @@ DEFAULT = {
         "secret": "your_exchange_secret",
         "ccxt_config": {"enableRateLimit": True},
         "ccxt_async_config": {"enableRateLimit": True, "rateLimit": 200},
-        "pair_whitelist": [],
-        "pair_blacklist": ["BNB/USDT", "BNB/BUSD", "BTC/USDT", "BTC/BUSD"],
+        "pair_whitelist": [
+
+        ],
+        "pair_blacklist": [
+            "BNB/USDT", 
+            "BNB/BUSD", 
+            "BTC/USDT", 
+            "BTC/BUSD"
+        ],
     },
     "pairlists": [{"method": "StaticPairList"}],
     "edge": {
