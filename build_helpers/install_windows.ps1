@@ -12,5 +12,5 @@ if ($pyv -eq '3.8') {
     pip install build_helpers\TA_Lib-0.4.20-cp38-cp38-win_amd64.whl
 }
 
-pip install -r requirements-dev.txt
+pip install -r requirements-dev-nb.txt
 pip install -e .
