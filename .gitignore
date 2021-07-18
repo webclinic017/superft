@@ -9,9 +9,12 @@ user_data/notebooks/*
 freqtrade-plot.html
 freqtrade-profit-plot.html
 freqtrade/rpc/api_server/ui/*
-.temp/
+.temp/*
 artifacts/
 wandb/
+tests/testdata/preset-test/exports/*
+tests/testdata/preset-test/backtest_results/*
+
 
 
 # Byte-compiled / optimized / DLL files

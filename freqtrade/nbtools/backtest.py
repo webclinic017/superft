@@ -1,5 +1,12 @@
 import logging
-from typing import Any, Dict, List, Tuple
+import os
+import json
+import rapidjson
+import pandas as pd
+import random
+import wandb
+from copy import deepcopy
+from typing import Any, Dict, List, Tuple, Union, Callable
 
 from freqtrade.configuration import remove_credentials, validate_config_consistency
 from freqtrade.data.dataprovider import DataProvider
@@ -14,8 +21,12 @@ from freqtrade.resolvers.exchange_resolver import ExchangeResolver
 from freqtrade.resolvers.strategy_resolver import StrategyResolver
 from freqtrade.strategy.interface import IStrategy
 from freqtrade.wallets import Wallets
+from freqtrade.nbtools import constants
 
-from .helper import Capturing, get_class_from_string
+from .helper import Capturing, get_class_from_string, get_function_body, get_readable_date
+from .preset import BasePreset, ConfigPreset, LocalPreset, CloudPreset
+from .configuration import setup_optimize_configuration
+from .remote_utils import cloud_retrieve_preset, preset_log, table_add_row
 
 
 logger = logging.getLogger(__name__)
@@ -170,3 +181,170 @@ def process_strategy(strategy: IStrategy, config: Dict[str, Any] = None) -> IStr
 
     StrategyResolver._strategy_sanity_validations(strategy)
     return strategy
+
+
+def backtest(preset: BasePreset, strategy: Union[str, Callable[[], None]]):
+    """ Start freqtrade backtesting. Callable in notebook.
+        preset: Any kind of Preset (ConfigPreset, LocalPreset, CloudPreset)
+        strategy: str or function that has strategy code
+    """
+    config_backtesting, config_optimize = preset.get_configs()
+    
+    if callable(strategy):
+        strategy_code = get_function_body(strategy)
+    else:
+        strategy_code = strategy
+    
+    backtester = NbBacktesting(config_optimize)
+    stats, summary = backtester.start_nb_backtesting(strategy_code)
+    
+    log_preset(preset, strategy_code, stats, config_backtesting, config_optimize)
+    
+    return stats, summary
+
+
+def log_preset(preset: BasePreset, strategy_code: str, stats: dict, config_backtesting: dict, config_optimize: dict):
+    """ Upload preset to cloud WandB. """
+    current_date = get_readable_date()
+    preset_name = f"{preset.name}__backtest-{current_date}"
+    metadata = generate_metadata(preset, stats, config_backtesting, config_optimize, current_date)
+    
+    filename_and_content = {
+        "metadata.json": metadata,
+        "config-backtesting.json": config_backtesting,
+        "config-optimize.json": config_optimize,
+        "exports/stats.json": stats,
+        "strategies/strategy.py": strategy_code,
+    }
+
+    # Generate folder and files to be uploaded
+    os.mkdir(f"./.temp/{preset_name}")
+    os.mkdir(f"./.temp/{preset_name}/exports")
+    os.mkdir(f"./.temp/{preset_name}/strategies")
+
+    for filename, content in filename_and_content.items():
+        with open(f"./.temp/{preset_name}/{filename}", mode="w") as f:
+            if "config" in filename or filename == "metadata.json":
+                json.dump(content, f, default=str, indent=4)
+                continue
+            if filename.endswith(".json"):
+                rapidjson.dump(content, f, default=str, number_mode=rapidjson.NM_NATIVE)
+                continue
+            if isinstance(content, str):
+                f.write(content)
+     
+    with wandb.init(project=constants.PROJECT_NAME_PRESETS) as run:
+        # wandb log artifact TODO: log artifact and add row in one go
+        preset_log(run, f"./.temp/{preset_name}", preset_name)
+        # wandb add row
+        table_add_row(
+            run,
+            metadata,
+            constants.PROJECT_NAME_PRESETS,
+            constants.PRESETS_ARTIFACT_METADATA,
+            constants.PRESETS_TABLEKEY_METADATA,
+        )
+
+    # (if use local preset) update local results
+    if isinstance(preset, LocalPreset):
+        print(f"You are backtesting a local preset `{preset.path_local_preset}`")
+        print("This will update backtest results (such as metadata.json, exports)")
+        print("Updating strategy via function will not update the strategy file")
+        # local metadata
+        with (preset.path_local_preset / "metadata.json").open("w") as fs:
+            json.dump(metadata, fs, default=str, indent=4)
+        # local exports/stats.json
+        with (preset.path_local_preset / "exports" / "stats.json").open("w") as fs:
+            json.dump(stats, fs, default=str, indent=4)
+
+    print("\n[BACKTEST FINISHED]")
+    print(f"Synced preset with name: {preset_name}")
+    print(f"with random name: {metadata['random_name']}\n")
+
+
+def generate_metadata(
+    preset: BasePreset, 
+    stats: Dict[str, Any], 
+    config_backtesting: dict, 
+    config_optimize: dict, 
+    current_date: str) -> Dict[str, Any]:
+    """
+    Generate backtesting summary in dict to be exported in json format
+    """
+    trades = pd.DataFrame(deepcopy(stats["strategy"]["NotebookStrategy"]["trades"]))
+    trades_summary = deepcopy(stats["strategy"]["NotebookStrategy"])
+    current_date_fmt = current_date.split("_")[0] + " " + current_date.split("_")[1].replace("-", ":")
+    
+    # You can add or remove any columns you want here
+    metadata = {
+        "random_name": get_random_name(),
+        "preset_name": f"{preset.name}__backtest-{current_date}",
+        "preset_type": preset.__class__.__name__,
+        "backtest_date": current_date_fmt,
+        "leverage": 1,  # TODO
+        "direction": "long",  # TODO
+        "is_hedging": False,  # TODO
+        "fee": config_optimize["fee"],
+        "num_pairs": len(trades_summary["pairlist"]),
+        "data_source": config_backtesting["exchange"]["name"],
+        "win_rate": trades_summary["wins"] / trades_summary["total_trades"],
+        "avg_profit_winners_abs": trades.loc[trades["profit_abs"] >= 0, "profit_abs"].dropna().mean(),
+        "avg_profit_losers_abs": trades.loc[trades["profit_abs"] < 0, "profit_abs"].dropna().mean(),
+        "sum_profit_winners_abs": trades.loc[trades["profit_abs"] >= 0, "profit_abs"].dropna().sum(),
+        "sum_profit_losers_abs": trades.loc[trades["profit_abs"] < 0, "profit_abs"].dropna().sum(),
+        "profit_mean_abs": trades_summary["profit_total_abs"] / trades_summary["total_trades"],
+        "profit_per_drawdown": trades_summary["profit_total_abs"] / abs(trades_summary["max_drawdown_abs"]),
+    }
+    # Needs extra calculation involves previous metadata
+    metadata.update(
+        {
+            "profit_factor": metadata["sum_profit_winners_abs"] / abs(metadata["sum_profit_losers_abs"]),
+            "expectancy_abs": (
+                (metadata["win_rate"] * metadata["avg_profit_winners_abs"])
+                + ((1 - metadata["win_rate"]) * metadata["avg_profit_losers_abs"])
+            ),
+        }
+    )
+
+    # Filter out "too long for table" data
+    for key in list(trades_summary):
+        value = trades_summary[key]
+        
+        is_valid_type = any(
+            [isinstance(value, it) for it in (str, int, float, bool)] + [value is None],
+        )
+        
+        if not is_valid_type:
+            trades_summary[key] = str(value)
+            
+            if len(trades_summary[key]) > 30:
+                del trades_summary[key]
+
+    return {**metadata, **trades_summary}
+
+
+def get_random_name() -> str:
+    list_of_possible_names_1 = [
+        "rage", "happy", "sad", "sick", "angry", "depressed", "broken", "boring", "satisfied",
+        "disgusted", "fearful", "hardworking", "loving", "destroyed", "bipolar", "dissatisfied",
+        "insane", "furious", "mad", "sane", "healthy", "friendly", "unfriendly", "introvert",
+        "extrovert", "silly", "smart", "dumb", "sadistic", "sociable", "unsociable", "lazy",
+    ]
+    list_of_possible_names_2 = [
+        "kirito", "asuna", "alice", "vector", "yoshiko", "kazuya", "rei", "phantom",
+        "gabriel", "vegeta", "frieza", "nobita", "vivy", "thor", "ironman", "captain",
+        "spiderman", "superman", "piccolo", "goku", "naruto", "sasuke", "midoriya",
+        "crypto", "todoroki", "batman", "thanos", "doraemon", "shinchan", "covid",
+    ]
+    list_of_possible_names_3 = [
+        "table", "speaker", "remote", "monitor", "keyboard", "camera", "smartphone",
+        "phone", "virus", "mask", "computer", "cpu", "ram", "memory", "eyeglasses",
+        "sanitizer", "charger", "cable", "sticker", "sword", "armor", "necklace", "shield",
+        "adapter", "electricity", "bulb", "laptop", "desktop", "mouse", "drug",
+    ]
+    random_name = (
+        random.choice(list_of_possible_names_1) +  "-" +
+        random.choice(list_of_possible_names_2) +  "-" +
+        random.choice(list_of_possible_names_3)
+    )
+    return random_name

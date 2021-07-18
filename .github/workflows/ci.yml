@@ -54,17 +54,18 @@ jobs:
         export LD_LIBRARY_PATH=${HOME}/dependencies/lib:$LD_LIBRARY_PATH
         export TA_LIBRARY_PATH=${HOME}/dependencies/lib
         export TA_INCLUDE_PATH=${HOME}/dependencies/include
-        pip install -r requirements-dev.txt
+        pip install -r requirements-dev-nb.txt
         pip install -e .
+        wandb login ${{ secrets.WANDB_API_KEY }}
 
     - name: Tests
       run: |
-        pytest --cov=freqtrade --cov-config=.coveragerc
+        pytest --random-order --cov=freqtrade --cov-config=.coveragerc
       if: matrix.python-version != '3.9'
 
     - name: Tests incl. ccxt compatibility tests
       run: |
-        pytest --cov=freqtrade --cov-config=.coveragerc --longrun
+        pytest --random-order --cov=freqtrade --cov-config=.coveragerc --longrun
       if: matrix.python-version == '3.9'
 
     - name: Coveralls
@@ -153,12 +154,13 @@ jobs:
         export LD_LIBRARY_PATH=${HOME}/dependencies/lib:$LD_LIBRARY_PATH
         export TA_LIBRARY_PATH=${HOME}/dependencies/lib
         export TA_INCLUDE_PATH=${HOME}/dependencies/include
-        pip install -r requirements-dev.txt
+        pip install -r requirements-dev-nb.txt
         pip install -e .
+        wandb login ${{ secrets.WANDB_API_KEY }}
 
     - name: Tests
       run: |
-        pytest --cov=freqtrade --cov-config=.coveragerc
+        pytest --random-order --cov=freqtrade --cov-config=.coveragerc
 
     - name: Coveralls
       if: (startsWith(matrix.os, 'ubuntu-20') && matrix.python-version == '3.8')
@@ -234,7 +236,8 @@ jobs:
 
     - name: Tests
       run: |
-        pytest --cov=freqtrade --cov-config=.coveragerc
+        wandb login ${{ secrets.WANDB_API_KEY }}
+        pytest --random-order --cov=freqtrade --cov-config=.coveragerc
 
     - name: Backtesting
       run: |

@@ -1,0 +1,6 @@
+# Include all requirements to run the bot.
+-r requirements-dev.txt
+
+# NB tools
+wandb==0.10.33
+dill==0.3.4
