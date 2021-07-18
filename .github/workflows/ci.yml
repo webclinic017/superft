@@ -233,10 +233,10 @@ jobs:
     - name: Installation
       run: |
         ./build_helpers/install_windows.ps1
-        wandb login ${{ secrets.WANDB_API_KEY }}
 
     - name: Tests
       run: |
+        wandb login ${{ secrets.WANDB_API_KEY }}
         pytest --random-order --cov=freqtrade --cov-config=.coveragerc
 
     - name: Backtesting
