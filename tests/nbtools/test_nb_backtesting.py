@@ -109,7 +109,7 @@ def test_backtest_cloudpreset(path_data = path_data()):
             timerange=TIMERANGE,
             path_data=path_data,
         )
-        stats, summary = backtest(preset, strategy_func)
+        stats, summary = backtest(preset, preset.default_strategy_code)
         assert stats is not None
 
 
