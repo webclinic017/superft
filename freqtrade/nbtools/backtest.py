@@ -5,6 +5,8 @@ import rapidjson
 import pandas as pd
 import random
 import wandb
+
+from functools import wraps
 from copy import deepcopy
 from typing import Any, Dict, List, Tuple, Union, Callable
 
@@ -23,7 +25,7 @@ from freqtrade.strategy.interface import IStrategy
 from freqtrade.wallets import Wallets
 from freqtrade.nbtools import constants
 
-from .helper import Capturing, get_class_from_string, get_function_body, get_readable_date
+from .helper import Capturing, get_class_from_string, get_function_body, get_readable_date, log_execute_time
 from .preset import BasePreset, ConfigPreset, LocalPreset, CloudPreset
 from .configuration import setup_optimize_configuration
 from .remote_utils import cloud_retrieve_preset, preset_log, table_add_row
@@ -43,11 +45,15 @@ class NbBacktesting(Backtesting):
         self.strategylist: List[IStrategy] = []
         self.all_results: Dict[str, Dict] = {}
 
+    
+    @log_execute_time("Backtest")
     def start_nb_backtesting(self, strategy_code: str) -> Tuple[dict, str]:
         """
         Run backtesting end-to-end
         :return: None
         """
+        logger.info("Backtesting...")
+
         strategy = get_class_from_string(strategy_code, "NotebookStrategy")(self.config)
         strategy = process_strategy(strategy, self.config)
         self.strategylist.append(strategy)
@@ -183,6 +189,7 @@ def process_strategy(strategy: IStrategy, config: Dict[str, Any] = None) -> IStr
     return strategy
 
 
+@log_execute_time("Whole Backtesting Process (Backtest + Log)")
 def backtest(preset: BasePreset, strategy: Union[str, Callable[[], None]]):
     """ Start freqtrade backtesting. Callable in notebook.
         preset: Any kind of Preset (ConfigPreset, LocalPreset, CloudPreset)
@@ -203,8 +210,11 @@ def backtest(preset: BasePreset, strategy: Union[str, Callable[[], None]]):
     return stats, summary
 
 
+@log_execute_time("Log Preset")
 def log_preset(preset: BasePreset, strategy_code: str, stats: dict, config_backtesting: dict, config_optimize: dict):
     """ Upload preset to cloud WandB. """
+    logger.info("Logging preset...")
+
     current_date = get_readable_date()
     preset_name = f"{preset.name}__backtest-{current_date}"
     metadata = generate_metadata(preset, stats, config_backtesting, config_optimize, current_date)
@@ -269,9 +279,8 @@ def generate_metadata(
     config_backtesting: dict, 
     config_optimize: dict, 
     current_date: str) -> Dict[str, Any]:
-    """
-    Generate backtesting summary in dict to be exported in json format
-    """
+    """Generate backtest summary in dict to be exported in json format"""
+
     trades = pd.DataFrame(deepcopy(stats["strategy"]["NotebookStrategy"]["trades"]))
     trades_summary = deepcopy(stats["strategy"]["NotebookStrategy"])
     current_date_fmt = current_date.split("_")[0] + " " + current_date.split("_")[1].replace("-", ":")
@@ -325,6 +334,7 @@ def generate_metadata(
 
 
 def get_random_name() -> str:
+    """Generate memorizable name for backtest results"""
     list_of_possible_names_1 = [
         "rage", "happy", "sad", "sick", "angry", "depressed", "broken", "boring", "satisfied",
         "disgusted", "fearful", "hardworking", "loving", "destroyed", "bipolar", "dissatisfied",

@@ -11,6 +11,7 @@ from pandas import DataFrame
 import wandb
 import logging
 from freqtrade.nbtools import constants
+from freqtrade.nbtools.helper import log_execute_time
 
 
 os.environ["WANDB_SILENT"] = "true"
@@ -107,6 +108,7 @@ def table_update_run(run, new_df: pd.DataFrame, project: str, artifact_name: str
     run.log_artifact(table_artifact)
 
 
+@log_execute_time("Download Cloud Preset")
 def cloud_retrieve_preset(preset_name: str) -> Any:
     """Returns {Preset} by downloading preset folder from the cloud according to preset name,
     then load it.

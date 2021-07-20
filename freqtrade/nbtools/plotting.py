@@ -32,9 +32,9 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     ax1.tick_params(axis="y", labelcolor="orange")
 
     # Section 1.2: Cumulative profit $ over time
-    targetted_time_trades = trades.loc[(trades.open_date >= start) & (trades.close_date <= end)]
-    targetted_time_trades = targetted_time_trades.set_index("close_date")
-    profits_usd = targetted_time_trades.profit_abs.cumsum()
+    trades = trades.loc[(trades.open_date >= start) & (trades.close_date <= end)]
+    trades = trades.set_index("close_date")
+    profits_usd = trades.profit_abs.cumsum()
     ax2 = ax1.twinx()
     ax2.plot(profits_usd, color="green", label="Returns")
     ax2.tick_params(axis="y", labelcolor="green")
@@ -69,17 +69,16 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     ax2.grid(b=True, which="both", color=grid_color, linestyle="-", axis="both", alpha=grid_alpha)
     plt.show()
 
-    # Print Portfolio Summary
-    print("Portfolio Summary")
-    print("------------------------------")
-    print("Min Balance          : %.2f" % min(profits_usd))
-    print("Max Balance          : %.2f" % max(profits_usd))
-    print("End Balance          : %.2f" % profits_usd[-1])
-    print("------------------------------")
-    print("Trades               : %i" % len(profits_usd))
-    print("Avg. Profit %%        : %.2f%%" % (trades["profit_ratio"].mean() * 100))
-    print("Avg. Profit $        : %.2f" % (profits_usd[-1] / len(profits_usd)))
-    print("Biggest Profit $     : %.2f" % trades.profit_abs.max())
-    print("Biggest Loss $       : %.2f" % trades.profit_abs.min())
-    print("------------------------------")
-    # TODO: Max Drawdown, Return / Drawdown
+    portfolio_summary = {
+        "Min Balance": round(min(profits_usd), 2),
+        "Max Balance": round(max(profits_usd), 2),
+        "End Balance": round(profits_usd[-1], 2),
+        "Trades": len(profits_usd),
+        "Avg. Profit %": round(trades["profit_ratio"].mean() * 100, 2),
+        "Avg. Profit $": round(profits_usd[-1] / len(profits_usd), 2),
+        "Biggest Profit $": round(trades.profit_abs.max(), 2),
+        "Biggest Loss $": round(trades.profit_abs.min(), 2),
+    }
+    df = pd.DataFrame({k: [v] for k, v in portfolio_summary.items()}).T
+    df.columns = ["Portfolio Summary"]
+    return df   

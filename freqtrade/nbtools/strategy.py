@@ -14,7 +14,7 @@ class INbStrategy(IStrategy):
     # These values can be overridden in the "ask_strategy" section in the config.
     use_sell_signal = True
     sell_profit_only = False
-    ignore_roi_if_buy_signal = True
+    ignore_roi_if_buy_signal = False
     # Number of candles the strategy requires before producing valid signals
     # NOTE: Depends on your training feature timeframe!
     startup_candle_count: int = 800
@@ -26,4 +26,4 @@ class INbStrategy(IStrategy):
         "stoploss_on_exchange": False,
     }
     # Optional order time in force.
-    order_time_in_force = {"buy": "gtc", "sell": "gtc"}
+    # order_time_in_force = {"buy": "gtc", "sell": "gtc"}

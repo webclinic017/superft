@@ -1,14 +1,19 @@
-import inspect
-import json
-import re
-import sys
 from importlib import util as importlib_util
 from io import StringIO
 from itertools import dropwhile
 from pathlib import Path
 from typing import Any
+from functools import wraps
 
+import inspect
+import json
+import re
+import sys
 import arrow
+import logging
+import time
+
+logger = logging.getLogger(__name__)
 
 
 class Capturing(list):
@@ -61,3 +66,19 @@ def get_function_body(func):
     else:
         indentation = len(lines[1]) - len(lines[1].lstrip())
         return "\n".join([lines[0]] + [line[indentation:] for line in lines[1:]])
+
+
+def log_execute_time(name: str = None):
+    def somedec_outer(fn):
+        @wraps(fn)
+        def somedec_inner(*args, **kwargs):
+            start = time.time()
+            try:
+                return fn(*args, **kwargs)
+            finally:
+                end = time.time() - start
+                logger.info('"{}" executed in {:.2f}s'.format(
+                    name if name is not None else function.__name__, end
+                ))
+        return somedec_inner
+    return somedec_outer
