@@ -1,0 +1,292 @@
+{
+ "checkpoints": [
+  {
+   "timestamp": 1626945741281,
+   "notebook": 0,
+   "targetCells": [
+    {
+     "cell": "c.0.0",
+     "changeType": "added",
+     "index": 0
+    }
+   ]
+  },
+  {
+   "timestamp": 1626945765571,
+   "notebook": 1,
+   "targetCells": [
+    {
+     "cell": "m.0.0",
+     "changeType": "type changed",
+     "index": 0
+    },
+    {
+     "cell": "c.1.0",
+     "changeType": "added",
+     "index": 1
+    }
+   ]
+  },
+  {
+   "timestamp": 1626945770902,
+   "notebook": 2,
+   "targetCells": [
+    {
+     "cell": "m.0.1",
+     "changeType": "edited",
+     "index": 0
+    }
+   ]
+  },
+  {
+   "timestamp": 1626945882370,
+   "notebook": 3,
+   "targetCells": [
+    {
+     "cell": "m.0.2",
+     "changeType": "edited",
+     "index": 0
+    }
+   ]
+  },
+  {
+   "timestamp": 1626945885178,
+   "notebook": 4,
+   "targetCells": [
+    {
+     "cell": "m.0.3",
+     "changeType": "edited",
+     "index": 0
+    },
+    {
+     "cell": "c.2.0",
+     "changeType": "added",
+     "index": 2
+    },
+    {
+     "cell": "c.1.1",
+     "changeType": "edited",
+     "output": [],
+     "index": 1
+    },
+    {
+     "cell": "c.3.0",
+     "changeType": "added",
+     "index": 3
+    }
+   ]
+  },
+  {
+   "timestamp": 1626945917960,
+   "notebook": 5,
+   "targetCells": [
+    {
+     "cell": "c.2.1",
+     "changeType": "edited",
+     "output": [],
+     "index": 2
+    },
+    {
+     "cell": "c.3.1",
+     "changeType": "edited",
+     "output": [],
+     "index": 3
+    }
+   ]
+  },
+  {
+   "timestamp": 1626946103355,
+   "notebook": 6,
+   "targetCells": [
+    {
+     "cell": "c.3.2",
+     "changeType": "edited",
+     "output": []
+    }
+   ]
+  }
+ ],
+ "notebook": {
+  "artifact_name": "n.0",
+  "versions": [
+   {
+    "start_checkpoint": 1626945741281,
+    "cells": [
+     "c.0.0"
+    ]
+   },
+   {
+    "start_checkpoint": 1626945765571,
+    "cells": [
+     "m.0.0",
+     "c.1.0"
+    ]
+   },
+   {
+    "start_checkpoint": 1626945770902,
+    "cells": [
+     "m.0.1",
+     "c.1.0"
+    ]
+   },
+   {
+    "start_checkpoint": 1626945882370,
+    "cells": [
+     "m.0.2",
+     "c.1.0"
+    ]
+   },
+   {
+    "start_checkpoint": 1626945885178,
+    "cells": [
+     "m.0.3",
+     "c.1.1",
+     "c.2.0",
+     "c.3.0"
+    ]
+   },
+   {
+    "start_checkpoint": 1626945917960,
+    "cells": [
+     "m.0.3",
+     "c.1.1",
+     "c.2.1",
+     "c.3.1"
+    ]
+   },
+   {
+    "start_checkpoint": 1626946103355,
+    "cells": [
+     "m.0.3",
+     "c.1.1",
+     "c.2.1",
+     "c.3.2"
+    ]
+   }
+  ]
+ },
+ "codeCells": [
+  {
+   "output_histories": {},
+   "artifact_name": "c.0",
+   "versions": [
+    {
+     "start_checkpoint": 1626945741281,
+     "parent": "n.0.0",
+     "start": {
+      "line": 1,
+      "ch": 0
+     },
+     "end": {
+      "line": 1,
+      "ch": 0
+     }
+    }
+   ]
+  },
+  {
+   "output_histories": {},
+   "artifact_name": "c.1",
+   "versions": [
+    {
+     "start_checkpoint": 1626945765571,
+     "parent": "n.0.1",
+     "start": {
+      "line": 1,
+      "ch": 0
+     },
+     "end": {
+      "line": 1,
+      "ch": 0
+     }
+    },
+    {
+     "start_checkpoint": 1626945885178,
+     "parent": "n.0.4",
+     "literal": "### Drop row"
+    }
+   ]
+  },
+  {
+   "output_histories": {},
+   "artifact_name": "c.2",
+   "versions": [
+    {
+     "start_checkpoint": 1626945885178,
+     "parent": "n.0.4",
+     "start": {
+      "line": 1,
+      "ch": 0
+     },
+     "end": {
+      "line": 1,
+      "ch": 0
+     }
+    },
+    {
+     "start_checkpoint": 1626945917960,
+     "parent": "n.0.5",
+     "literal": "### Imputation (filling with mean)"
+    }
+   ]
+  },
+  {
+   "output_histories": {},
+   "artifact_name": "c.3",
+   "versions": [
+    {
+     "start_checkpoint": 1626945885178,
+     "parent": "n.0.4",
+     "start": {
+      "line": 1,
+      "ch": 0
+     },
+     "end": {
+      "line": 1,
+      "ch": 0
+     }
+    },
+    {
+     "start_checkpoint": 1626945917960,
+     "parent": "n.0.5",
+     "literal": "### As a feature column"
+    },
+    {
+     "start_checkpoint": 1626946103355,
+     "parent": "n.0.6",
+     "literal": "### Imputation + is_missing category column"
+    }
+   ]
+  }
+ ],
+ "markdownCells": [
+  {
+   "artifact_name": "m.0",
+   "versions": [
+    {
+     "start_checkpoint": 1626945765571,
+     "parent": "n.0.1"
+    },
+    {
+     "start_checkpoint": 1626945770902,
+     "parent": "n.0.2",
+     "markdown": "### Missing Values"
+    },
+    {
+     "start_checkpoint": 1626945882370,
+     "parent": "n.0.3",
+     "markdown": "##Missing Values"
+    },
+    {
+     "start_checkpoint": 1626945885178,
+     "parent": "n.0.4",
+     "markdown": "## Missing Values",
+     "origin": "c.0.0"
+    }
+   ]
+  }
+ ],
+ "rawCells": [],
+ "snippets": [],
+ "output": []
+}
