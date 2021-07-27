@@ -11,13 +11,13 @@ import pandas as pd
 class TradingLightningModule(ABC):
     """
     NOTE: Not a PyTorch Lightning module!
-    TODO: Define a numpy version instead of dataframe.
+    TODO: Implement numpy version instead of dataframe to train NN.
     """
     # User Defined Configuration
-    NAME: str = attr.ib()
-    TIMEFRAME: str = attr.ib()
-    EXCHANGE: str = attr.ib()
-    COLUMNS_NOT_USE: List[str] = attr.ib(default=["date", "open", "high", "low", "close", "volume", "pair", "ml_label"])
+    name: str = attr.ib()
+    timeframe: str = attr.ib()
+    exchange: str = attr.ib()
+    columns_unused: List[str] = attr.ib(default=["date", "open", "high", "low", "close", "volume", "pair", "ml_label"])
     """
     Data Format
     - Date <= Last 2 months: Train and Val (Shuffled val data)
@@ -25,17 +25,17 @@ class TradingLightningModule(ABC):
     - Last Month to Present: Unbiased backtesting
     """
     # Training and Val range
-    TRAINVAL_START = attr.ib(default="2021-03-01")
-    TRAINVAL_END   = attr.ib(default="2021-05-26")
+    trainval_start = attr.ib(default="2021-03-01")
+    trainval_end   = attr.ib(default="2021-05-26")
     # Optimize profits in backtesting range
-    OPT_START      = attr.ib(default="2021-05-27")
-    OPT_END        = attr.ib(default="2021-06-27")
+    opt_start      = attr.ib(default="2021-05-27")
+    opt_end        = attr.ib(default="2021-06-27")
     # Unbiased backtesting range 
-    TEST_START     = attr.ib(default="2021-06-28")
-    TEST_END       = attr.ib(default="2021-07-28")
+    test_start     = attr.ib(default="2021-06-28")
+    test_end       = attr.ib(default="2021-07-28")
     
     # Updated after training
-    MODEL = None
+    model = None
     
     def __attrs_post_init__(self):
         self.DATA_PATHS = [str(it) for it in self.get_data_paths()]
@@ -50,7 +50,8 @@ class TradingLightningModule(ABC):
     def add_features(self, df_per_pair: pd.DataFrame) -> pd.DataFrame:
         """ Define the features of dataset. Called after load data of this pair. 
             NOTE: Must import libraries that features are dependent on. 
-            E.G: import talib.abstract as ta, etc...
+            This will be used when inferencing with freqtrade.
+            E.G: `import talib.abstract as ta`, etc...
         """
         raise NotImplementedError()
     
@@ -62,8 +63,8 @@ class TradingLightningModule(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def post_processing(self, df_combined: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """ Extra processing step for the combined data (all pairs). Called after add_labels()
+    def final_processing(self, df_combined: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+        """ Final processing step for the combined data (all pairs). Called after add_labels()
             Returns: (Train DataFrame, Val DataFrame)
         """
         raise NotImplementedError()
@@ -76,12 +77,24 @@ class TradingLightningModule(ABC):
     @abstractmethod
     def start_training(self, run: Run, df_train: pd.DataFrame, df_val: pd.DataFrame):
         """ Start model training with wandb.init() as run.
-            NOTE: Please call self.set_untrained_model(model) before training!
+            NOTE: Refer to self.model when training!
             Tips:
             - Save model checkpoint as wandb artifact every 100s of epochs or so.
-            - After training ends, save the final model.
+            - When the training ends, save the final model.
             - It is recommended to log loss, accuracy, etc. using self.training_step()
-            - After training to refer your trained model, you can refer to self.MODEL
+            - After training, to refer your trained model, you can refer to self.model to evaluate.
+        """
+        raise NotImplementedError()
+    
+    @abstractmethod
+    def predict(self, df_input: pd.DataFrame):
+        """ Returns the Series of prediction. This inference will be
+            used in strategy.py file loaded from wandb.
+        
+        1. Check if feature columns and datatypes are supported.
+           If not, create new df, convert dtype, then call add_features()
+           
+        NOTE: This method must NOT change the existing input dataframe.
         """
         raise NotImplementedError()
     
@@ -91,7 +104,9 @@ class TradingLightningModule(ABC):
     
     def _pre_training(self, run: Run):
         """ Pre training checks """
+        raise NotImplementedError()
     
     def _post_training(self, run: Run):
         """ Post training checks """
+        raise NotImplementedError()
         

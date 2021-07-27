@@ -154,8 +154,8 @@ def load_one(module: TradingLightningModule, df_list: list, path: Path) -> pd.Da
     d1["pair"] = path.name.split("-")[0].replace("_", "/")
     d1["date"] = pd.to_datetime(d1["date"], unit='ms')
     d1 = d1.reset_index(drop=True)
-    d1 = d1[((d1.date >= module.TRAINVAL_START) &
-            (d1.date <= module.TRAINVAL_END))]
+    d1 = d1[((d1.date >= module.trainval_start) &
+            (d1.date <= module.trainval_end))]
     
     # Convert to FP32
     d1 = d1.astype({col: "float32" for col in ["open", "high", "low", "close", "volume"]})
