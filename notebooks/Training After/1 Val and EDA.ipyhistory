@@ -1,0 +1,50 @@
+{
+ "checkpoints": [
+  {
+   "timestamp": 1627286266752,
+   "notebook": 0,
+   "targetCells": [
+    {
+     "cell": "c.0.0",
+     "changeType": "added",
+     "index": 0
+    }
+   ]
+  }
+ ],
+ "notebook": {
+  "artifact_name": "n.0",
+  "versions": [
+   {
+    "start_checkpoint": 1627286266752,
+    "cells": [
+     "c.0.0"
+    ]
+   }
+  ]
+ },
+ "codeCells": [
+  {
+   "output_histories": {},
+   "artifact_name": "c.0",
+   "versions": [
+    {
+     "start_checkpoint": 1627286266752,
+     "parent": "n.0.0",
+     "start": {
+      "line": 1,
+      "ch": 0
+     },
+     "end": {
+      "line": 1,
+      "ch": 0
+     }
+    }
+   ]
+  }
+ ],
+ "markdownCells": [],
+ "rawCells": [],
+ "snippets": [],
+ "output": []
+}
