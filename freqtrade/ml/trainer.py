@@ -1,14 +1,17 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Any
-from wandb.wandb_run import Run
+from wandb.sdk.wandb_run import Run
 
 import attr
-import dill
+import cloudpickle
 import pandas as pd
+import wandb
+import json
 
 from freqtrade.ml.lightning import TradingLightningModule
 from freqtrade.ml import dataloader
+from freqtrade.nbtools.helper import free_mem, get_readable_date
 
 
 @attr.s
@@ -29,20 +32,45 @@ class TradingTrainer:
     """
     
     def fit(self, module: TradingLightningModule, wandb_run: Run) -> Any:
-        """ Start Training Your Model. Returns Trained Model """
+        """ Start Training Model. Returns Trained Model """
         
         df_full = dataloader.load_dataset(module)
-        df_train, df_val = module.final_processing(df_full)
-        dataloader.free_mem(df_full)
+        print(f"Loaded Pairs: {[it for it in df_full['pair'].unique()]}")
         
-        module_attrs_before = attr.asdict(module)
-        # TODO: Save module_attrs_before to pickle then wandb sync
+        if "ml_label" not in df_full.columns:
+            raise Exception("Please add your training labels as 'ml_label' column.")
         
-        module.model = module.define_model(wandb_run, df_train, df_val)
-        module.start_training(wandb_run, df_train, df_val)
+        module.columns_x = [col for col in df_full.columns if col not in module.columns_unused]
         
-        module_attrs_after = attr.asdict(module)
-        # TODO: Save module_attrs_after to pickle then wandb sync
+        X_train, X_val, y_train, y_val = module.final_processing(df_full)
+        free_mem(df_full)
         
-        self.module = module
+        module.model = module.define_model(wandb_run, X_train, X_val, y_train, y_val)
+        module.start_training(wandb_run, X_train, X_val, y_train, y_val)
+        
+        for clean in [X_train, X_val, y_train, y_val]:
+            free_mem(clean)
+        
+        self._log_module(module, wandb_run)
+        
         return module.model
+    
+    # pyright: reportGeneralTypeIssues=false
+    def _log_module(self, module: TradingLightningModule, run: Run):
+        """ - Log string and non object attrs as JSON
+            - Log whole module object
+        """
+        foldername = f"lightning_{module.name}_{get_readable_date()}"
+        
+        path_to_folder = Path.cwd() / ".temp" / foldername
+        path_to_folder.mkdir()
+        
+        with (path_to_folder / "module.json").open("w") as fs:
+            json.dump(attr.asdict(module), fs, default=str)
+        with (path_to_folder / "module.pkl").open("wb") as fs:
+            cloudpickle.dump(module, fs)
+            
+        artifact = wandb.Artifact(module.name, type="model_files")
+        artifact.add_dir(str(path_to_folder))
+        run.log_artifact(artifact)
+        

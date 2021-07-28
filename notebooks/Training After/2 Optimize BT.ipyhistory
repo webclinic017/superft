@@ -1,0 +1,707 @@
+{
+ "checkpoints": [
+  {
+   "timestamp": 1627471486347,
+   "notebook": 0,
+   "targetCells": [
+    {
+     "cell": "c.0.0",
+     "changeType": "added",
+     "index": 0
+    },
+    {
+     "cell": "c.1.0",
+     "changeType": "added"
+    }
+   ]
+  },
+  {
+   "timestamp": 1627471587117,
+   "notebook": 1,
+   "targetCells": [
+    {
+     "cell": "c.0.1",
+     "changeType": "edited",
+     "output": [
+      "o.0.0"
+     ],
+     "index": 0
+    },
+    {
+     "cell": "c.2.0",
+     "changeType": "added",
+     "index": 1
+    },
+    {
+     "cell": "c.1.1",
+     "changeType": "edited",
+     "output": [],
+     "index": 2
+    }
+   ]
+  },
+  {
+   "timestamp": 1627471847295,
+   "notebook": 2,
+   "targetCells": [
+    {
+     "cell": "c.1.2",
+     "changeType": "edited",
+     "output": [],
+     "index": 2
+    }
+   ]
+  },
+  {
+   "timestamp": 1627471967360,
+   "notebook": 3,
+   "targetCells": [
+    {
+     "cell": "c.1.3",
+     "changeType": "edited",
+     "output": [],
+     "index": 2
+    }
+   ]
+  },
+  {
+   "timestamp": 1627472087415,
+   "notebook": 4,
+   "targetCells": [
+    {
+     "cell": "c.1.4",
+     "changeType": "edited",
+     "output": [],
+     "index": 2
+    },
+    {
+     "cell": "c.2.0",
+     "changeType": "removed",
+     "index": 1
+    }
+   ]
+  },
+  {
+   "timestamp": 1627472132574,
+   "notebook": 5,
+   "targetCells": [
+    {
+     "cell": "c.3.0",
+     "changeType": "added",
+     "index": 2
+    }
+   ]
+  },
+  {
+   "timestamp": 1627472208185,
+   "notebook": 6,
+   "targetCells": [
+    {
+     "cell": "c.1.5",
+     "changeType": "edited",
+     "output": [],
+     "index": 1
+    },
+    {
+     "cell": "c.3.1",
+     "changeType": "edited",
+     "output": [],
+     "index": 2
+    },
+    {
+     "cell": "c.0.2",
+     "changeType": "edited",
+     "output": [],
+     "index": 0
+    }
+   ]
+  },
+  {
+   "timestamp": 1627472328233,
+   "notebook": 7,
+   "targetCells": [
+    {
+     "cell": "c.3.2",
+     "changeType": "edited",
+     "output": [],
+     "index": 2
+    },
+    {
+     "cell": "c.4.0",
+     "changeType": "added",
+     "index": 3
+    },
+    {
+     "cell": "c.0.3",
+     "changeType": "edited",
+     "output": [
+      "o.1.0"
+     ],
+     "index": 0
+    }
+   ]
+  },
+  {
+   "timestamp": 1627472425166,
+   "notebook": 8,
+   "targetCells": [
+    {
+     "cell": "c.3.3",
+     "changeType": "edited",
+     "output": [
+      "o.2.0"
+     ],
+     "index": 2
+    },
+    {
+     "cell": "c.1.6",
+     "changeType": "edited",
+     "output": [],
+     "index": 1
+    },
+    {
+     "cell": "c.0.4",
+     "changeType": "edited",
+     "output": [],
+     "index": 0
+    }
+   ]
+  },
+  {
+   "timestamp": 1627472688421,
+   "notebook": 9,
+   "targetCells": [
+    {
+     "cell": "c.0.5",
+     "changeType": "edited",
+     "output": [],
+     "index": 0
+    },
+    {
+     "cell": "c.3.4",
+     "changeType": "edited",
+     "output": [],
+     "index": 2
+    }
+   ]
+  },
+  {
+   "timestamp": 1627472728593,
+   "notebook": 10,
+   "targetCells": [
+    {
+     "cell": "c.0.6",
+     "changeType": "edited",
+     "output": [
+      "o.3.0"
+     ],
+     "index": 0
+    },
+    {
+     "cell": "c.3.5",
+     "changeType": "edited",
+     "output": [
+      "o.4.0"
+     ],
+     "index": 2
+    }
+   ]
+  },
+  {
+   "timestamp": 1627472743159,
+   "notebook": 11,
+   "targetCells": [
+    {
+     "cell": "c.3.6",
+     "changeType": "edited",
+     "output": [
+      "o.5.0"
+     ],
+     "index": 2
+    },
+    {
+     "cell": "c.0.7",
+     "changeType": "edited",
+     "output": [],
+     "index": 0
+    }
+   ]
+  },
+  {
+   "timestamp": 1627472786788,
+   "notebook": 12,
+   "targetCells": [
+    {
+     "cell": "c.3.6",
+     "changeType": "output changed",
+     "output": [
+      "o.5.1"
+     ],
+     "index": 2
+    },
+    {
+     "cell": "c.0.8",
+     "changeType": "edited",
+     "output": [],
+     "index": 0
+    }
+   ]
+  },
+  {
+   "timestamp": 1627472928580,
+   "notebook": 13,
+   "targetCells": [
+    {
+     "cell": "c.0.9",
+     "changeType": "edited",
+     "output": []
+    }
+   ]
+  }
+ ],
+ "notebook": {
+  "artifact_name": "n.0",
+  "versions": [
+   {
+    "start_checkpoint": 1627471486347,
+    "cells": [
+     "c.0.0",
+     "c.1.0"
+    ]
+   },
+   {
+    "start_checkpoint": 1627471587117,
+    "cells": [
+     "c.0.1",
+     "c.2.0",
+     "c.1.1"
+    ]
+   },
+   {
+    "start_checkpoint": 1627471847295,
+    "cells": [
+     "c.0.1",
+     "c.2.0",
+     "c.1.2"
+    ]
+   },
+   {
+    "start_checkpoint": 1627471967360,
+    "cells": [
+     "c.0.1",
+     "c.2.0",
+     "c.1.3"
+    ]
+   },
+   {
+    "start_checkpoint": 1627472087415,
+    "cells": [
+     "c.0.1",
+     "c.1.4"
+    ]
+   },
+   {
+    "start_checkpoint": 1627472132574,
+    "cells": [
+     "c.0.1",
+     "c.1.4",
+     "c.3.0"
+    ]
+   },
+   {
+    "start_checkpoint": 1627472208185,
+    "cells": [
+     "c.0.2",
+     "c.1.5",
+     "c.3.1"
+    ]
+   },
+   {
+    "start_checkpoint": 1627472328233,
+    "cells": [
+     "c.0.3",
+     "c.1.5",
+     "c.3.2",
+     "c.4.0"
+    ]
+   },
+   {
+    "start_checkpoint": 1627472425166,
+    "cells": [
+     "c.0.4",
+     "c.1.6",
+     "c.3.3",
+     "c.4.0"
+    ]
+   },
+   {
+    "start_checkpoint": 1627472688421,
+    "cells": [
+     "c.0.5",
+     "c.1.6",
+     "c.3.4",
+     "c.4.0"
+    ]
+   },
+   {
+    "start_checkpoint": 1627472728593,
+    "cells": [
+     "c.0.6",
+     "c.1.6",
+     "c.3.5",
+     "c.4.0"
+    ]
+   },
+   {
+    "start_checkpoint": 1627472743159,
+    "cells": [
+     "c.0.7",
+     "c.1.6",
+     "c.3.6",
+     "c.4.0"
+    ]
+   },
+   {
+    "start_checkpoint": 1627472786788,
+    "cells": [
+     "c.0.8",
+     "c.1.6",
+     "c.3.6",
+     "c.4.0"
+    ]
+   },
+   {
+    "start_checkpoint": 1627472928580,
+    "cells": [
+     "c.0.9",
+     "c.1.6",
+     "c.3.6",
+     "c.4.0"
+    ]
+   }
+  ]
+ },
+ "codeCells": [
+  {
+   "output_histories": {
+    "1": "o.0",
+    "3": "o.1",
+    "6": "o.3"
+   },
+   "artifact_name": "c.0",
+   "versions": [
+    {
+     "start_checkpoint": 1627471486347,
+     "parent": "n.0.0",
+     "start": {
+      "line": 1,
+      "ch": 0
+     },
+     "end": {
+      "line": 1,
+      "ch": 0
+     }
+    },
+    {
+     "start_checkpoint": 1627471587117,
+     "parent": "n.0.1",
+     "literal": "%load_ext autoreload\n%autoreload 2\n%env WANDB_SILENT=true\n\nfrom pathlib import Path\nfrom copy import deepcopy\nimport matplotlib.pyplot as plt\nimport pandas as pd\nimport quantstats as qs\nimport os\nimport logging\nimport sys\n\n\n# Filter logs to only print from `nbtools`\nclass NbFilter(logging.Filter):\n    def filter(self, record):\n        return \"nbtools\" in record.getName()\n\nqs.extend_pandas()\nplt.style.use(\"seaborn-whitegrid\")\npd.set_option('display.max_rows', 200)\n\nif \"freqtrade\" not in os.listdir():\n    import nest_asyncio\n    nest_asyncio.apply()\n    os.chdir(\"..\")\n    logger = logging.getLogger(\"freqtrade.nbtools\")\n    handler = logging.StreamHandler(stream=sys.stdout)\n    handler.setFormatter(logging.Formatter(\"%(name)s - %(message)s\"))\n    logger.addHandler(handler)\n    # logger.addFilter(NbFilter())\n    logger.setLevel(logging.INFO)\n\nprint(\"Working Directory:\", os.getcwd())\n\n# Freqtrade Imports\nfrom freqtrade.optimize.optimize_reports import text_table_add_metrics\nfrom freqtrade.nbtools.preset import LocalPreset\nfrom freqtrade.nbtools.backtest import backtest\nfrom freqtrade.nbtools import plotting\n\n# Constants\nPATH_MOUNT = Path.cwd().parent / \"mount\""
+    },
+    {
+     "start_checkpoint": 1627472208185,
+     "parent": "n.0.6",
+     "literal": "%load_ext autoreload\n%autoreload 2\n%env WANDB_SILENT=true\n\nfrom pathlib import Path\nfrom copy import deepcopy\nimport matplotlib.pyplot as plt\nimport pandas as pd\nimport quantstats as qs\nimport os\nimport logging\nimport sys\n\n\n# Filter logs to only print from `nbtools`\nclass NbFilter(logging.Filter):\n    def filter(self, record):\n        return \"nbtools\" in record.getName()\n\nqs.extend_pandas()\nplt.style.use(\"seaborn-whitegrid\")\npd.set_option('display.max_rows', 200)\n\nif \"freqtrade\" not in os.listdir():\n    import nest_asyncio\n    nest_asyncio.apply()\n    os.chdir(\"..\")\n    logger = logging.getLogger(\"freqtrade.nbtools\")\n    handler = logging.StreamHandler(stream=sys.stdout)\n    handler.setFormatter(logging.Formatter(\"%(name)s - %(message)s\"))\n    logger.addHandler(handler)\n    # logger.addFilter(NbFilter())\n    logger.setLevel(logging.INFO)\n\nprint(\"Working Directory:\", os.getcwd())\n\n# Freqtrade Imports\nfrom freqtrade.optimize.optimize_reports import text_table_add_metrics\nfrom freqtrade.nbtools.preset import LocalPreset\nfrom freqtrade.nbtools.backtest import backtest\nfrom freqtrade.nbtools import plotting\n\n# Constants\nPATH_MOUNT = Path.cwd().parent / \"mount\"\n\n# Custom function\ndef string_templating(string: str, data: dict):\n    \"\"\"Replace [|key|] in string with data[\"key\"] \"\"\"\n    for key, value in data.items():\n        string = string.replace(\"[|{}|]\".format(key), value)\n    return string"
+    },
+    {
+     "start_checkpoint": 1627472328233,
+     "parent": "n.0.7",
+     "literal": "%load_ext autoreload\n%autoreload 2\n%env WANDB_SILENT=true\n\nfrom pathlib import Path\nfrom copy import deepcopy\nimport matplotlib.pyplot as plt\nimport pandas as pd\nimport quantstats as qs\nimport os\nimport logging\nimport sys\n\n\n# Filter logs to only print from `nbtools`\nclass NbFilter(logging.Filter):\n    def filter(self, record):\n        return \"nbtools\" in record.getName()\n\nqs.extend_pandas()\nplt.style.use(\"seaborn-whitegrid\")\npd.set_option('display.max_rows', 200)\n\nif \"freqtrade\" not in os.listdir():\n    import nest_asyncio\n    nest_asyncio.apply()\n    os.chdir(\"..\")\n    logger = logging.getLogger(\"freqtrade.nbtools\")\n    handler = logging.StreamHandler(stream=sys.stdout)\n    handler.setFormatter(logging.Formatter(\"%(name)s - %(message)s\"))\n    logger.addHandler(handler)\n    # logger.addFilter(NbFilter())\n    logger.setLevel(logging.INFO)\n\nprint(\"Working Directory:\", os.getcwd())\n\n# Freqtrade Imports\nfrom freqtrade.optimize.optimize_reports import text_table_add_metrics\nfrom freqtrade.nbtools.preset import LocalPreset\nfrom freqtrade.nbtools.backtest import backtest\nfrom freqtrade.nbtools import plotting\n\n# Constants\nPATH_MOUNT = Path.cwd().parent / \"mount\"\n\n# Custom function\ndef string_templating(string: str, data: dict):\n    \"\"\"Replace [|key|] in string with data[\"key\"] \"\"\"\n    for key, value in data.items():\n        string = string.replace(\"[|{}|]\".format(key), str(value))\n    return string"
+    },
+    {
+     "start_checkpoint": 1627472425166,
+     "parent": "n.0.8",
+     "literal": "%load_ext autoreload\n%autoreload 2\n%env WANDB_SILENT=true\n\nfrom pathlib import Path\nfrom copy import deepcopy\nimport matplotlib.pyplot as plt\nimport pandas as pd\nimport quantstats as qs\nimport os\nimport logging\nimport sys\nimport inspect\n\n\n# Filter logs to only print from `nbtools`\nclass NbFilter(logging.Filter):\n    def filter(self, record):\n        return \"nbtools\" in record.getName()\n\nqs.extend_pandas()\nplt.style.use(\"seaborn-whitegrid\")\npd.set_option('display.max_rows', 200)\n\nif \"freqtrade\" not in os.listdir():\n    import nest_asyncio\n    nest_asyncio.apply()\n    os.chdir(\"..\")\n    logger = logging.getLogger(\"freqtrade.nbtools\")\n    handler = logging.StreamHandler(stream=sys.stdout)\n    handler.setFormatter(logging.Formatter(\"%(name)s - %(message)s\"))\n    logger.addHandler(handler)\n    # logger.addFilter(NbFilter())\n    logger.setLevel(logging.INFO)\n\nprint(\"Working Directory:\", os.getcwd())\n\n# Freqtrade Imports\nfrom freqtrade.optimize.optimize_reports import text_table_add_metrics\nfrom freqtrade.nbtools.preset import LocalPreset\nfrom freqtrade.nbtools.backtest import backtest\nfrom freqtrade.nbtools import plotting\n\n# Constants\nPATH_MOUNT = Path.cwd().parent / \"mount\"\n\n# Custom function\ndef string_templating(string: str, data: dict):\n    \"\"\"Replace [|key|] in string with data[\"key\"] \"\"\"\n    for key, value in data.items():\n        string = string.replace(\"[|{}|]\".format(key), str(value))\n    return string"
+    },
+    {
+     "start_checkpoint": 1627472688421,
+     "parent": "n.0.9",
+     "literal": "%load_ext autoreload\n%autoreload 2\n%env WANDB_SILENT=true\n\nfrom pathlib import Path\nfrom copy import deepcopy\nimport matplotlib.pyplot as plt\nimport pandas as pd\nimport quantstats as qs\nimport os\nimport logging\nimport sys\nimport inspect\n\n\n# Filter logs to only print from `nbtools`\nclass NbFilter(logging.Filter):\n    def filter(self, record):\n        return \"nbtools\" in record.getName()\n\nqs.extend_pandas()\nplt.style.use(\"seaborn-whitegrid\")\npd.set_option('display.max_rows', 200)\n\nif \"freqtrade\" not in os.listdir():\n    import nest_asyncio\n    nest_asyncio.apply()\n    os.chdir(\"..\")\n    logger = logging.getLogger(\"freqtrade.nbtools\")\n    handler = logging.StreamHandler(stream=sys.stdout)\n    handler.setFormatter(logging.Formatter(\"%(name)s - %(message)s\"))\n    logger.addHandler(handler)\n    # logger.addFilter(NbFilter())\n    logger.setLevel(logging.INFO)\n\nprint(\"Working Directory:\", os.getcwd())\n\n# Freqtrade Imports\nfrom freqtrade.optimize.optimize_reports import text_table_add_metrics\nfrom freqtrade.nbtools.preset import LocalPreset\nfrom freqtrade.nbtools.backtest import backtest\nfrom freqtrade.nbtools import plotting\n\n# Constants\nPATH_MOUNT = Path.cwd().parent / \"mount\"\n\n# Custom function\ndef string_templating(string: str, data: dict, strip_quotes=False):\n    \"\"\"Replace [|key|] in string with data[\"key\"] \"\"\"\n    for key, value in data.items():\n        string = string.replace(\"[|{}|]\".format(key), str(value))\n        if strip_quotes:\n            string = string.replace(\"[|{}|]\".format(key), str(value))\n            \n    return string"
+    },
+    {
+     "start_checkpoint": 1627472728593,
+     "parent": "n.0.10",
+     "literal": "%load_ext autoreload\n%autoreload 2\n%env WANDB_SILENT=true\n\nfrom pathlib import Path\nfrom copy import deepcopy\nimport matplotlib.pyplot as plt\nimport pandas as pd\nimport quantstats as qs\nimport os\nimport logging\nimport sys\nimport inspect\n\n\n# Filter logs to only print from `nbtools`\nclass NbFilter(logging.Filter):\n    def filter(self, record):\n        return \"nbtools\" in record.getName()\n\nqs.extend_pandas()\nplt.style.use(\"seaborn-whitegrid\")\npd.set_option('display.max_rows', 200)\n\nif \"freqtrade\" not in os.listdir():\n    import nest_asyncio\n    nest_asyncio.apply()\n    os.chdir(\"..\")\n    logger = logging.getLogger(\"freqtrade.nbtools\")\n    handler = logging.StreamHandler(stream=sys.stdout)\n    handler.setFormatter(logging.Formatter(\"%(name)s - %(message)s\"))\n    logger.addHandler(handler)\n    # logger.addFilter(NbFilter())\n    logger.setLevel(logging.INFO)\n\nprint(\"Working Directory:\", os.getcwd())\n\n# Freqtrade Imports\nfrom freqtrade.optimize.optimize_reports import text_table_add_metrics\nfrom freqtrade.nbtools.preset import LocalPreset\nfrom freqtrade.nbtools.backtest import backtest\nfrom freqtrade.nbtools import plotting\n\n# Constants\nPATH_MOUNT = Path.cwd().parent / \"mount\"\n\n# Custom function\ndef string_templating(string: str, data: dict, strip_doublequotes=False):\n    \"\"\"Replace [|key|] in string with data[\"key\"] \"\"\"\n    for key, value in data.items():\n        if strip_doublequotes:\n            string = string.replace(\"[|{}|]\".format(key), str(value))\n        else:\n            string = string.replace(\"\\\"[|{}|]\\\"\".format(key), str(value))\n    return string"
+    },
+    {
+     "start_checkpoint": 1627472743159,
+     "parent": "n.0.11",
+     "literal": "%load_ext autoreload\n%autoreload 2\n%env WANDB_SILENT=true\n\nfrom pathlib import Path\nfrom copy import deepcopy\nimport matplotlib.pyplot as plt\nimport pandas as pd\nimport quantstats as qs\nimport os\nimport logging\nimport sys\nimport inspect\n\n\n# Filter logs to only print from `nbtools`\nclass NbFilter(logging.Filter):\n    def filter(self, record):\n        return \"nbtools\" in record.getName()\n\nqs.extend_pandas()\nplt.style.use(\"seaborn-whitegrid\")\npd.set_option('display.max_rows', 200)\n\nif \"freqtrade\" not in os.listdir():\n    import nest_asyncio\n    nest_asyncio.apply()\n    os.chdir(\"..\")\n    logger = logging.getLogger(\"freqtrade.nbtools\")\n    handler = logging.StreamHandler(stream=sys.stdout)\n    handler.setFormatter(logging.Formatter(\"%(name)s - %(message)s\"))\n    logger.addHandler(handler)\n    # logger.addFilter(NbFilter())\n    logger.setLevel(logging.INFO)\n\nprint(\"Working Directory:\", os.getcwd())\n\n# Freqtrade Imports\nfrom freqtrade.optimize.optimize_reports import text_table_add_metrics\nfrom freqtrade.nbtools.preset import LocalPreset\nfrom freqtrade.nbtools.backtest import backtest\nfrom freqtrade.nbtools import plotting\n\n# Constants\nPATH_MOUNT = Path.cwd().parent / \"mount\"\n\n# Custom function\ndef string_templating(string: str, data: dict, strip_doublequotes=False):\n    \"\"\"Replace [|key|] in string with data[\"key\"] \"\"\"\n    for key, value in data.items():\n        if strip_doublequotes:\n            string = string.replace(\"\\\"[|{}|]\\\"\".format(key), str(value))\n        else:\n            string = string.replace(\"[|{}|]\".format(key), str(value))\n    return string"
+    },
+    {
+     "start_checkpoint": 1627472786788,
+     "parent": "n.0.12",
+     "literal": "%load_ext autoreload\n%autoreload 2\n%env WANDB_SILENT=true\n\nfrom pathlib import Path\nfrom copy import deepcopy\nimport matplotlib.pyplot as plt\nimport pandas as pd\nimport quantstats as qs\nimport os\nimport logging\nimport sys\nimport inspect\n\n\n# Filter logs to only print from `nbtools`\nclass NbFilter(logging.Filter):\n    def filter(self, record):\n        return \"nbtools\" in record.getName()\n\nqs.extend_pandas()\nplt.style.use(\"seaborn-whitegrid\")\npd.set_option('display.max_rows', 200)\n\nif \"freqtrade\" not in os.listdir():\n    import nest_asyncio\n    nest_asyncio.apply()\n    os.chdir(\"..\")\n    logger = logging.getLogger(\"freqtrade.nbtools\")\n    handler = logging.StreamHandler(stream=sys.stdout)\n    handler.setFormatter(logging.Formatter(\"%(name)s - %(message)s\"))\n    logger.addHandler(handler)\n    # logger.addFilter(NbFilter())\n    logger.setLevel(logging.INFO)\n\nprint(\"Working Directory:\", os.getcwd())\n\n# Freqtrade Imports\nfrom freqtrade.optimize.optimize_reports import text_table_add_metrics\nfrom freqtrade.nbtools.preset import LocalPreset\nfrom freqtrade.nbtools.backtest import backtest\nfrom freqtrade.nbtools import plotting\n\n# Constants\nPATH_MOUNT = Path.cwd().parent / \"mount\"\n\n# Custom function\ndef string_templating(string: str, data: dict, strip_doublequotes=False):\n    \"\"\"Replace [|key|] in string with data[\"key\"] \"\"\"\n    for key, value in data.items():\n        if strip_doublequotes:\n            to_replace\n            string = string.replace(\"\\\"[|{}|]\\\"\".format(key), str(value))\n        else:\n            string = string.replace(\"[|{}|]\".format(key), str(value))\n    return string"
+    },
+    {
+     "start_checkpoint": 1627472928580,
+     "parent": "n.0.13",
+     "literal": "%load_ext autoreload\n%autoreload 2\n%env WANDB_SILENT=true\n\nfrom pathlib import Path\nfrom copy import deepcopy\nimport matplotlib.pyplot as plt\nimport pandas as pd\nimport quantstats as qs\nimport os\nimport logging\nimport sys\nimport inspect\n\n\n# Filter logs to only print from `nbtools`\nclass NbFilter(logging.Filter):\n    def filter(self, record):\n        return \"nbtools\" in record.getName()\n\nqs.extend_pandas()\nplt.style.use(\"seaborn-whitegrid\")\npd.set_option('display.max_rows', 200)\n\nif \"freqtrade\" not in os.listdir():\n    import nest_asyncio\n    nest_asyncio.apply()\n    os.chdir(\"..\")\n    logger = logging.getLogger(\"freqtrade.nbtools\")\n    handler = logging.StreamHandler(stream=sys.stdout)\n    handler.setFormatter(logging.Formatter(\"%(name)s - %(message)s\"))\n    logger.addHandler(handler)\n    # logger.addFilter(NbFilter())\n    logger.setLevel(logging.INFO)\n\nprint(\"Working Directory:\", os.getcwd())\n\n# Freqtrade Imports\nfrom freqtrade.optimize.optimize_reports import text_table_add_metrics\nfrom freqtrade.nbtools.preset import LocalPreset\nfrom freqtrade.nbtools.backtest import backtest\nfrom freqtrade.nbtools import plotting\n\n# Constants\nPATH_MOUNT = Path.cwd().parent / \"mount\"\n\n# Custom function\ndef string_templating(string: str, data: dict, strip_doublequotes=False):\n    \"\"\"Replace [|key|] in string with data[\"key\"] \"\"\"\n    for key, value in data.items():\n        to_replace = \"[|{}|]\".format(key)\n        if strip_doublequotes:\n            to_replace = \"\\\"[|{}|]\\\"\".format(key)\n        if to_replace not in string:\n            raise Exception(f\"Not found formatting with key '{key}'\")\n        string = strin\n    return string"
+    }
+   ]
+  },
+  {
+   "output_histories": {},
+   "artifact_name": "c.1",
+   "versions": [
+    {
+     "start_checkpoint": 1627471486347,
+     "parent": "n.0.0",
+     "start": {
+      "line": 1,
+      "ch": 0
+     },
+     "end": {
+      "line": 1,
+      "ch": 0
+     }
+    },
+    {
+     "start_checkpoint": 1627471587117,
+     "parent": "n.0.1",
+     "literal": "def strategy_func():\n    \"\"\" Start Strategy Code \"\"\"\n    from freqtrade.nbtools.strategy import INbStrategy\n    from numpy.lib.npyio import save\n    from numpy.lib.utils import info\n    from pandas import DataFrame\n    import numpy as np  # noqa\n    import pandas as pd  # noqa\n    import talib.abstract as ta\n\n    class NotebookStrategy(INbStrategy):\n\t# These attributes are REQUIRED!\n        timeframe = \"15m\"\n        minimal_roi = {\"0\": 0.02, \"30\": 0.01}\n        stoploss = -0.01 \n        startup_candle_count: int = 100\n\n        def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe[\"ema_10\"] = ta.EMA(dataframe[\"close\"], timeperiod=10)\n            dataframe[\"ema_20\"] = ta.EMA(dataframe[\"close\"], timeperiod=20)\n            return dataframe\n\n        def populate_buy_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] > dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'buy'] = 1\n            return dataframe\n\n        def populate_sell_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] < dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'sell'] = 1\n            return dataframe\n    \"\"\" End Strategy Code \"\"\""
+    },
+    {
+     "start_checkpoint": 1627471847295,
+     "parent": "n.0.2",
+     "literal": "def strategy_func():\n    \"\"\" Start Strategy Code \"\"\"\n    from freqtrade.nbtools.strategy import INbStrategy\n    from freqtrade.ml.lightning import TradingLightningModule\n    from numpy.lib.npyio import save\n    from numpy.lib.utils import info\n    from pandas import DataFrame\n    import numpy as np  # noqa\n    import pandas as pd  # noqa\n    import talib.abstract as ta\n\n    class NotebookStrategy(INbStrategy):\n        # These attributes are REQUIRED!\n        timeframe = \"15m\"\n        minimal_roi = {\"0\": 0.02, \"30\": 0.01}\n        stoploss = -0.01 \n        startup_candle_count: int = 100\n\n        lightning_module = None\n        \n        def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe[\"ema_10\"] = ta.EMA(dataframe[\"close\"], timeperiod=10)\n            dataframe[\"ema_20\"] = ta.EMA(dataframe[\"close\"], timeperiod=20)\n            return dataframe\n\n        def populate_buy_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] > dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'buy'] = 1\n            return dataframe\n\n        def populate_sell_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] < dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'sell'] = 1\n            return dataframe\n    \"\"\" End Strategy Code \"\"\""
+    },
+    {
+     "start_checkpoint": 1627471967360,
+     "parent": "n.0.3",
+     "literal": "def strategy_func():\n    \"\"\" Start Strategy Code \"\"\"\n    from freqtrade.nbtools.strategy import INbStrategy\n    from freqtrade.nbtools.remote_utils import load_pickle_asset\n    from freqtrade.ml.lightning import TradingLightningModule\n    from numpy.lib.npyio import save\n    from numpy.lib.utils import info\n    from pandas import DataFrame\n    import numpy as np  # noqa\n    import pandas as pd  # noqa\n    import talib.abstract as ta\n\n    class NotebookStrategy(INbStrategy):\n        # These attributes are REQUIRED!\n        timeframe = \"15m\"\n        minimal_roi = {\"0\": 0.02, \"30\": 0.01}\n        stoploss = -0.01 \n        startup_candle_count: int = 100\n            \n        lightning_module: TradingLightningModule = None\n        \n        def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            if self.lightning_module is None:\n                lightning_module = load_pickle_asset()\n            \n            dataframe[\"ema_10\"] = ta.EMA(dataframe[\"close\"], timeperiod=10)\n            dataframe[\"ema_20\"] = ta.EMA(dataframe[\"close\"], timeperiod=20)\n            return dataframe\n\n        def populate_buy_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] > dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'buy'] = 1\n            return dataframe\n\n        def populate_sell_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] < dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'sell'] = 1\n            return dataframe\n    \"\"\" End Strategy Code \"\"\""
+    },
+    {
+     "start_checkpoint": 1627472087415,
+     "parent": "n.0.4",
+     "literal": "def strategy_func():\n    \"\"\" Start Strategy Code \"\"\"\n    from freqtrade.nbtools.strategy import INbStrategy\n    from freqtrade.nbtools.remote_utils import load_pickle_asset\n    from freqtrade.ml.lightning import TradingLightningModule\n    from numpy.lib.npyio import save\n    from numpy.lib.utils import info\n    from pandas import DataFrame\n    import numpy as np  # noqa\n    import pandas as pd  # noqa\n    import talib.abstract as ta\n    \n    MODULE_NAME = \"15n30-randomforest\"\n    \n    class NotebookStrategy(INbStrategy):\n        # These attributes are REQUIRED!\n        timeframe = \"15m\"\n        minimal_roi = {\"0\": 0.02, \"30\": 0.01}\n        stoploss = -0.01 \n        startup_candle_count: int = 100\n            \n        lightning_module: TradingLightningModule = None\n        \n        def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            if self.lightning_module is None:\n                lightning_module = load_pickle_asset(MODULE_NAME, MODULE_NAME, version=\"\")\n            \n            dataframe[\"ema_10\"] = ta.EMA(dataframe[\"close\"], timeperiod=10)\n            dataframe[\"ema_20\"] = ta.EMA(dataframe[\"close\"], timeperiod=20)\n            return dataframe\n\n        def populate_buy_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] > dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'buy'] = 1\n            return dataframe\n\n        def populate_sell_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] < dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'sell'] = 1\n            return dataframe\n    \"\"\" End Strategy Code \"\"\""
+    },
+    {
+     "start_checkpoint": 1627472208185,
+     "parent": "n.0.6",
+     "literal": "def strategy_func():\n    \"\"\" Start Strategy Code \"\"\"\n    from freqtrade.nbtools.strategy import INbStrategy\n    from freqtrade.nbtools.remote_utils import load_pickle_asset\n    from freqtrade.ml.lightning import TradingLightningModule\n    from numpy.lib.npyio import save\n    from numpy.lib.utils import info\n    from pandas import DataFrame\n    import numpy as np  # noqa\n    import pandas as pd  # noqa\n    import talib.abstract as ta\n    \n    MODULE_NAME = \"15n30-randomforest\"\n    \n    class NotebookStrategy(INbStrategy):\n        # These attributes are REQUIRED!\n        timeframe = \"15m\"\n        minimal_roi = {\"0\": 0.02, \"30\": 0.01}\n        stoploss = -0.01 \n        startup_candle_count: int = 100\n            \n        lightning_module: TradingLightningModule = None\n        \n        def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            if self.lightning_module is None:\n                lightning_module = load_pickle_asset(MODULE_NAME, MODULE_NAME, version=\"[|latest|]\")\n            \n            dataframe[\"ema_10\"] = ta.EMA(dataframe[\"close\"], timeperiod=10)\n            dataframe[\"ema_20\"] = ta.EMA(dataframe[\"close\"], timeperiod=20)\n            return dataframe\n\n        def populate_buy_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] > dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'buy'] = 1\n            return dataframe\n\n        def populate_sell_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] < dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'sell'] = 1\n            return dataframe\n    \"\"\" End Strategy Code \"\"\""
+    },
+    {
+     "start_checkpoint": 1627472425166,
+     "parent": "n.0.8",
+     "literal": "def strategy_func():\n    \"\"\" Start Strategy Code \"\"\"\n    from freqtrade.nbtools.strategy import INbStrategy\n    from freqtrade.nbtools.remote_utils import load_pickle_asset\n    from freqtrade.ml.lightning import TradingLightningModule\n    from numpy.lib.npyio import save\n    from numpy.lib.utils import info\n    from pandas import DataFrame\n    import numpy as np  # noqa\n    import pandas as pd  # noqa\n    import talib.abstract as ta\n    \n    MODULE_NAME = \"15n30-randomforest\"\n    \n    class NotebookStrategy(INbStrategy):\n        # These attributes are REQUIRED!\n        timeframe = \"15m\"\n        minimal_roi = {\"0\": 0.02, \"30\": 0.01}\n        stoploss = -0.01 \n        startup_candle_count: int = 100\n            \n        lightning_module: TradingLightningModule = None\n        \n        def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            if self.lightning_module is None:\n                lightning_module = load_pickle_asset(MODULE_NAME, MODULE_NAME, version=\"[|version|]\")\n            \n            dataframe[\"ema_10\"] = ta.EMA(dataframe[\"close\"], timeperiod=10)\n            dataframe[\"ema_20\"] = ta.EMA(dataframe[\"close\"], timeperiod=20)\n            return dataframe\n\n        def populate_buy_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] > dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'buy'] = 1\n            return dataframe\n\n        def populate_sell_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] < dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'sell'] = 1\n            return dataframe\n    \"\"\" End Strategy Code \"\"\""
+    }
+   ]
+  },
+  {
+   "output_histories": {},
+   "artifact_name": "c.2",
+   "versions": [
+    {
+     "start_checkpoint": 1627471587117,
+     "parent": "n.0.1",
+     "start": {
+      "line": 1,
+      "ch": 0
+     },
+     "end": {
+      "line": 1,
+      "ch": 0
+     }
+    }
+   ]
+  },
+  {
+   "output_histories": {
+    "3": "o.2",
+    "5": "o.4",
+    "6": "o.5"
+   },
+   "artifact_name": "c.3",
+   "versions": [
+    {
+     "start_checkpoint": 1627472132574,
+     "parent": "n.0.5",
+     "start": {
+      "line": 1,
+      "ch": 0
+     },
+     "end": {
+      "line": 1,
+      "ch": 0
+     }
+    },
+    {
+     "start_checkpoint": 1627472208185,
+     "parent": "n.0.6",
+     "literal": "latest_version = 7\n\ndef string_templating(string: str, data: dict):\n    \"\"\"\"\"\""
+    },
+    {
+     "start_checkpoint": 1627472328233,
+     "parent": "n.0.7",
+     "literal": "{\"vers\"}"
+    },
+    {
+     "start_checkpoint": 1627472425166,
+     "parent": "n.0.8",
+     "literal": "data = {\"version\": 7}\nsample_string = \"lightning_module = load_pickle_asset(MODULE_NAME, MODULE_NAME, version=\\\"[|version|]\\\")\"\nstring_templating(sample_string, data)"
+    },
+    {
+     "start_checkpoint": 1627472688421,
+     "parent": "n.0.9",
+     "literal": "data = {\"version\": 7}\nsample_string = inspect.getsource(strategy_func)\nstring_templating(sample_string, data)"
+    },
+    {
+     "start_checkpoint": 1627472728593,
+     "parent": "n.0.10",
+     "literal": "data = {\"version\": 7}\nsample_string = inspect.getsource(strategy_func)\nstring_templating(sample_string, data, strip_doublequotes=True)"
+    },
+    {
+     "start_checkpoint": 1627472743159,
+     "parent": "n.0.11",
+     "literal": "data = {\"version\": 7}\nsample_string = inspect.getsource(strategy_func)\nprint(string_templating(sample_string, data, strip_doublequotes=True))"
+    }
+   ]
+  },
+  {
+   "output_histories": {},
+   "artifact_name": "c.4",
+   "versions": [
+    {
+     "start_checkpoint": 1627472328233,
+     "parent": "n.0.7",
+     "start": {
+      "line": 1,
+      "ch": 0
+     },
+     "end": {
+      "line": 1,
+      "ch": 0
+     }
+    }
+   ]
+  }
+ ],
+ "markdownCells": [],
+ "rawCells": [],
+ "snippets": [],
+ "output": [
+  {
+   "artifact_name": "o.0",
+   "versions": [
+    {
+     "start_checkpoint": 1627471587117,
+     "parent": "c.0.1",
+     "raw": [
+      {
+       "name": "stdout",
+       "text": "The autoreload extension is already loaded. To reload it, use:\n  %reload_ext autoreload\nenv: WANDB_SILENT=true\nWorking Directory: C:\\CS\\Python\\crypto-collection\\freqtrade\\superft\n",
+       "output_type": "stream"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "artifact_name": "o.1",
+   "versions": [
+    {
+     "start_checkpoint": 1627472328233,
+     "parent": "c.0.3",
+     "raw": [
+      {
+       "name": "stdout",
+       "text": "The autoreload extension is already loaded. To reload it, use:\n  %reload_ext autoreload\nenv: WANDB_SILENT=true\nWorking Directory: C:\\CS\\Python\\crypto-collection\\freqtrade\\superft\n",
+       "output_type": "stream"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "artifact_name": "o.2",
+   "versions": [
+    {
+     "start_checkpoint": 1627472425166,
+     "parent": "c.3.3",
+     "raw": [
+      {
+       "execution_count": 7,
+       "output_type": "execute_result",
+       "data": {
+        "text/plain": "'lightning_module = load_pickle_asset(MODULE_NAME, MODULE_NAME, version=\"7\")'"
+       },
+       "metadata": {}
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "artifact_name": "o.3",
+   "versions": [
+    {
+     "start_checkpoint": 1627472728593,
+     "parent": "c.0.6",
+     "raw": [
+      {
+       "name": "stdout",
+       "text": "The autoreload extension is already loaded. To reload it, use:\n  %reload_ext autoreload\nenv: WANDB_SILENT=true\nWorking Directory: C:\\CS\\Python\\crypto-collection\\freqtrade\\superft\n",
+       "output_type": "stream"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "artifact_name": "o.4",
+   "versions": [
+    {
+     "start_checkpoint": 1627472728593,
+     "parent": "c.3.5",
+     "raw": [
+      {
+       "execution_count": 14,
+       "output_type": "execute_result",
+       "data": {
+        "text/plain": "'def strategy_func():\\n    \"\"\" Start Strategy Code \"\"\"\\n    from freqtrade.nbtools.strategy import INbStrategy\\n    from freqtrade.nbtools.remote_utils import load_pickle_asset\\n    from freqtrade.ml.lightning import TradingLightningModule\\n    from numpy.lib.npyio import save\\n    from numpy.lib.utils import info\\n    from pandas import DataFrame\\n    import numpy as np  # noqa\\n    import pandas as pd  # noqa\\n    import talib.abstract as ta\\n    \\n    MODULE_NAME = \"15n30-randomforest\"\\n    \\n    class NotebookStrategy(INbStrategy):\\n        # These attributes are REQUIRED!\\n        timeframe = \"15m\"\\n        minimal_roi = {\"0\": 0.02, \"30\": 0.01}\\n        stoploss = -0.01 \\n        startup_candle_count: int = 100\\n            \\n        lightning_module: TradingLightningModule = None\\n        \\n        def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\\n            if self.lightning_module is None:\\n                lightning_module = load_pickle_asset(MODULE_NAME, MODULE_NAME, version=\"7\")\\n            \\n            dataframe[\"ema_10\"] = ta.EMA(dataframe[\"close\"], timeperiod=10)\\n            dataframe[\"ema_20\"] = ta.EMA(dataframe[\"close\"], timeperiod=20)\\n            return dataframe\\n\\n        def populate_buy_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\\n            dataframe.loc[\\n                (\\n                    (dataframe[\\'ema_10\\'] > dataframe[\\'ema_20\\']) &\\n                    (dataframe[\\'volume\\'] > 0)  # Make sure Volume is not 0\\n                ),\\n                \\'buy\\'] = 1\\n            return dataframe\\n\\n        def populate_sell_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\\n            dataframe.loc[\\n                (\\n                    (dataframe[\\'ema_10\\'] < dataframe[\\'ema_20\\']) &\\n                    (dataframe[\\'volume\\'] > 0)  # Make sure Volume is not 0\\n                ),\\n                \\'sell\\'] = 1\\n            return dataframe\\n    \"\"\" End Strategy Code \"\"\"\\n'"
+       },
+       "metadata": {}
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "artifact_name": "o.5",
+   "versions": [
+    {
+     "start_checkpoint": 1627472743159,
+     "parent": "c.3.6",
+     "raw": [
+      {
+       "name": "stdout",
+       "text": "def strategy_func():\n    \"\"\" Start Strategy Code \"\"\"\n    from freqtrade.nbtools.strategy import INbStrategy\n    from freqtrade.nbtools.remote_utils import load_pickle_asset\n    from freqtrade.ml.lightning import TradingLightningModule\n    from numpy.lib.npyio import save\n    from numpy.lib.utils import info\n    from pandas import DataFrame\n    import numpy as np  # noqa\n    import pandas as pd  # noqa\n    import talib.abstract as ta\n    \n    MODULE_NAME = \"15n30-randomforest\"\n    \n    class NotebookStrategy(INbStrategy):\n        # These attributes are REQUIRED!\n        timeframe = \"15m\"\n        minimal_roi = {\"0\": 0.02, \"30\": 0.01}\n        stoploss = -0.01 \n        startup_candle_count: int = 100\n            \n        lightning_module: TradingLightningModule = None\n        \n        def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            if self.lightning_module is None:\n                lightning_module = load_pickle_asset(MODULE_NAME, MODULE_NAME, version=\"7\")\n            \n            dataframe[\"ema_10\"] = ta.EMA(dataframe[\"close\"], timeperiod=10)\n            dataframe[\"ema_20\"] = ta.EMA(dataframe[\"close\"], timeperiod=20)\n            return dataframe\n\n        def populate_buy_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] > dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'buy'] = 1\n            return dataframe\n\n        def populate_sell_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] < dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'sell'] = 1\n            return dataframe\n    \"\"\" End Strategy Code \"\"\"\n\n",
+       "output_type": "stream"
+      }
+     ]
+    },
+    {
+     "start_checkpoint": 1627472786788,
+     "parent": "c.3.6",
+     "raw": [
+      {
+       "name": "stdout",
+       "text": "def strategy_func():\n    \"\"\" Start Strategy Code \"\"\"\n    from freqtrade.nbtools.strategy import INbStrategy\n    from freqtrade.nbtools.remote_utils import load_pickle_asset\n    from freqtrade.ml.lightning import TradingLightningModule\n    from numpy.lib.npyio import save\n    from numpy.lib.utils import info\n    from pandas import DataFrame\n    import numpy as np  # noqa\n    import pandas as pd  # noqa\n    import talib.abstract as ta\n    \n    MODULE_NAME = \"15n30-randomforest\"\n    \n    class NotebookStrategy(INbStrategy):\n        # These attributes are REQUIRED!\n        timeframe = \"15m\"\n        minimal_roi = {\"0\": 0.02, \"30\": 0.01}\n        stoploss = -0.01 \n        startup_candle_count: int = 100\n            \n        lightning_module: TradingLightningModule = None\n        \n        def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            if self.lightning_module is None:\n                lightning_module = load_pickle_asset(MODULE_NAME, MODULE_NAME, version=7)\n            \n            dataframe[\"ema_10\"] = ta.EMA(dataframe[\"close\"], timeperiod=10)\n            dataframe[\"ema_20\"] = ta.EMA(dataframe[\"close\"], timeperiod=20)\n            return dataframe\n\n        def populate_buy_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] > dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'buy'] = 1\n            return dataframe\n\n        def populate_sell_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:\n            dataframe.loc[\n                (\n                    (dataframe['ema_10'] < dataframe['ema_20']) &\n                    (dataframe['volume'] > 0)  # Make sure Volume is not 0\n                ),\n                'sell'] = 1\n            return dataframe\n    \"\"\" End Strategy Code \"\"\"\n\n",
+       "output_type": "stream"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

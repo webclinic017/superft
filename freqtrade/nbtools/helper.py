@@ -12,6 +12,7 @@ import sys
 import arrow
 import logging
 import time
+import gc
 
 logger = logging.getLogger(__name__)
 
@@ -82,3 +83,8 @@ def log_execute_time(name: str = None):
                 ))
         return somedec_inner
     return somedec_outer
+
+
+def free_mem(var):
+    del var
+    gc.collect()

@@ -2,9 +2,9 @@
 import os
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Union
 
-import dill
+import cloudpickle
 import pandas as pd
 from pandas import DataFrame
 
@@ -146,15 +146,21 @@ def add_single_asset(path, project, asset_name):
 
 
 @Memoize
-def load_pickle_asset(project, asset_name):
+def load_pickle_asset(project, asset_name, version: Union[int, str] = "latest"):
     """Used in: Strategy and ftrunner"""
+    msg = f"Load version '{version}' of pickle asset for project: '{project}' - asset_name: '{asset_name}'"
+    logger.warning(msg)
     with wandb.init(project=project) as run:
-        artifact = run.use_artifact(f"{asset_name}:latest")
+        artifact = run.use_artifact(f"{asset_name}:{version}")
         path = Path.cwd() / artifact.download()
-        filepath = path / os.listdir(path)[0]
-        with filepath.open("rb") as f:
-            return dill.load(f)
-
+        
+        for filename in os.listdir(path)[0]:
+            if not filename.endswith("pkl"):
+                continue
+            with (path / filename).open("rb") as f:
+                return cloudpickle.load(f)
+    
+    raise FileNotFoundError(f"No '.pkl' file in '{path}''.")
 
 if __name__ == "__main__":
     print("LOAD 1st")
