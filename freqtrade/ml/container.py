@@ -99,10 +99,19 @@ class LightningContainer:
         Returns the original of DataFrame with prediction columns. 
         This inference will be used in strategy.py file loaded from wandb.
         """
-        df_perpair = self.add_features(df_perpair)
-        df_with_prediction = self.module.on_predict(df_perpair)
-        df_with_prediction = df_with_prediction.drop(columns=self.module.columns_x)
-        return df_with_prediction
+        df_preds = df_perpair.copy()
+        df_preds = self.add_features(df_preds)
+        
+        # Drop OHLCV because not needed by on_predict(). TODO: Make sure supports freqtrade df.
+        df_preds = df_preds.drop(columns=self.module.columns_unused)
+        df_preds = self.module.on_predict(df_preds)
+        
+        # Drop feature columns because freqtrade doesn't need it
+        df_preds = df_preds.drop(columns=self.module.columns_x)
+        
+        # Return original freqtrade dataframe with prediction columns
+        df_perpair[df_preds.columns] = df_preds
+        return df_perpair
     
     def training_step(self, run: Run, data: dict):
         """ Container wrapper for module.training_step()
