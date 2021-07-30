@@ -8,13 +8,13 @@ import pandas as pd
 import gc
 import attr
 
-from freqtrade.ml.lightning import TradingLightningModule
+from freqtrade.ml.lightning import LightningModule
 from freqtrade.nbtools.helper import free_mem
 from freqtrade.nbtools.pairs import PAIRS_HIGHCAP_NONSTABLE
 
 
 @attr.s(repr=False)  # Repr=False to support pickle
-class RandomForest(TradingLightningModule):
+class RandomForest(LightningModule):
     """ Example RandomForest Module """
     
     def __attrs_pre_init__(self):
@@ -23,7 +23,7 @@ class RandomForest(TradingLightningModule):
         self.num_future_candles = 2
         self.num_classification_classes = 3
     
-    def get_data_paths(self, timeframe: str, exchange: str) -> List[Path]:
+    def on_get_data_paths(self, timeframe: str, exchange: str) -> List[Path]:
         """ List of Path object to your per pair JSON data consisting of [date, open, high, low, close, volume] columns"""
         path_data_exchange = Path.cwd().parent / "mount" / "data" / exchange
 
@@ -34,11 +34,11 @@ class RandomForest(TradingLightningModule):
             in PAIRS_HIGHCAP_NONSTABLE[:5]
         ]
     
-    def add_features(self, df_per_pair: pd.DataFrame) -> pd.DataFrame:
+    def on_add_features(self, df_per_pair: pd.DataFrame) -> pd.DataFrame:
         import talib.abstract as ta
 
         # Start add features
-        spaces = [3, 5, 9, 15, 25, 50, 100, 200, 500]
+        spaces = [3, 5, 9, 15, 25, 50, 100, 200]
         for i in spaces:
             df_per_pair[f"ml_smadiff_{i}"] = (df_per_pair['close'].rolling(i).mean() - df_per_pair['close'])
             df_per_pair[f"ml_maxdiff_{i}"] = (df_per_pair['close'].rolling(i).max() - df_per_pair['close'])
@@ -56,57 +56,58 @@ class RandomForest(TradingLightningModule):
         df_per_pair = df_per_pair.astype({col: "float32" for col in df_per_pair.columns if "float" in str(df_per_pair[col].dtype)})
         return df_per_pair
 
-    def add_labels(self, df_per_pair: pd.DataFrame) -> pd.DataFrame:
+    def on_add_labels(self, df_per_pair: pd.DataFrame) -> pd.DataFrame:
         # Create labels for classification task
         future_price = df_per_pair['close'].shift(-self.num_future_candles)
         ml_label = (future_price - df_per_pair['close']) / df_per_pair['close']
         df_per_pair[self.column_y] = pd.qcut(ml_label, self.num_classification_classes, labels=False)
         return df_per_pair
 
-    def final_processing(self, df_combined: pd.DataFrame) -> Tuple[Any, Any, Any, Any]:
-        df_combined = self._balance_class_dataset(df_combined)
-        X = df_combined[self.columns_x]
-        y = df_combined[self.column_y]
+    def on_final_processing(self, df_allpairs: pd.DataFrame) -> Tuple[Any, Any, Any, Any]:
+        df_allpairs = self._balance_class_dataset(df_allpairs)
+        X = df_allpairs[self.columns_x]
+        y = df_allpairs[self.column_y]
         X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=1)
         return X_train, X_val, y_train, y_val
 
-    def _balance_class_dataset(self, df_combined: pd.DataFrame) -> pd.DataFrame:
+    def _balance_class_dataset(self, df_allpairs: pd.DataFrame) -> pd.DataFrame:
         """Balance num of datas in every class"""
-        lengths_every_class = list(df_combined.groupby(by=["ml_label"]).count()["date"])
-        df_combined_copy = pd.DataFrame()
+        lengths_every_class = list(df_allpairs.groupby(by=["ml_label"]).count()["date"])
+        df_allpairs_copy = pd.DataFrame()
 
-        for classname in df_combined["ml_label"].unique():
+        for classname in df_allpairs["ml_label"].unique():
             minimum_of_all = min(lengths_every_class)
-            df_combined_copy = df_combined_copy.append(df_combined.loc[df_combined["ml_label"] == classname, :].iloc[:minimum_of_all])
+            df_allpairs_copy = df_allpairs_copy.append(df_allpairs.loc[df_allpairs["ml_label"] == classname, :].iloc[:minimum_of_all])
 
         # Performance improvements
-        df_combined_copy = df_combined_copy.astype(
-            {col: "float32" for col in df_combined_copy.columns if "float" in str(df_combined_copy[col].dtype)}
+        df_allpairs_copy = df_allpairs_copy.astype(
+            {col: "float32" for col in df_allpairs_copy.columns if "float" in str(df_allpairs_copy[col].dtype)}
         )
-        free_mem(df_combined)
+        free_mem(df_allpairs)
         
-        return df_combined_copy
+        return df_allpairs_copy
 
-    def define_model(self, run: Run, X_train, X_val, y_train, y_val) -> Any:
+    def on_define_model(self, run: Run, X_train, X_val, y_train, y_val) -> Any:
         return RandomForestClassifier(max_depth=2, random_state=0)
     
-    def start_training(self, run: Run, X_train, X_val, y_train, y_val):
+    def on_start_training(self, run: Run, X_train, X_val, y_train, y_val):
         self.model: RandomForestClassifier
         self.model.fit(X_train, y_train)
 
-    def predict(self, df_input: pd.DataFrame) -> pd.DataFrame:
+    def on_predict(self, df_input: pd.DataFrame) -> pd.DataFrame:
         """ Returns the Series of prediction. This inference will be
             used in strategy.py file loaded from wandb.
         
-        1. Check if feature columns and datatypes are supported.
-           If not, create new df, convert dtype, then call add_features()
+        1. Convert to FP32 if it isn't.
+        2. Call add_features() if no existing features.
+        3. 
            
         NOTE: This method must NOT change the existing input dataframe.
         NOTE: If predict need to import external libraries, import it here.
         """
         raise NotImplementedError()
 
-    def training_step(self, run: Run, data: dict):
+    def on_training_step(self, run: Run, data: dict):
         """ Called every training step to log process. """
         raise NotImplementedError()
     
@@ -116,6 +117,7 @@ if __name__ == "__main__":
     
     import wandb
     from freqtrade.ml.trainer import TradingTrainer
+    from freqtrade.ml import dataloader
     
     name = "15n30-randomforest"
     
@@ -126,5 +128,10 @@ if __name__ == "__main__":
             exchange = "binance",
         )
         trainer = TradingTrainer()
-        model = trainer.fit(rf_module, run)
+        container = trainer.fit(rf_module, run, log_wandb=False)
+    
+    df = dataloader.load_df(Path.cwd().parent / "mount" / "data" / "binance" / "BTC_USDT-15m.json")
+    # df = container.module.model.predict(df)
+    print(df.head())
+    print(df.info())
     

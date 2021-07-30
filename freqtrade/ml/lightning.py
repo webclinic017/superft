@@ -8,7 +8,7 @@ import pandas as pd
 
 
 @attr.s(repr=False)
-class TradingLightningModule(ABC):
+class LightningModule(ABC):
     """
     NOTE: Not a PyTorch Lightning module!
     TODO: Implement numpy version instead of dataframe to train NN.
@@ -41,17 +41,17 @@ class TradingLightningModule(ABC):
     model = None
     
     def __attrs_post_init__(self):
-        self.data_paths = self.get_data_paths(self.timeframe, self.exchange)
-        self.data_paths_str = [str(it) for it in self.get_data_paths(self.timeframe, self.exchange)]
-        self.pairs = [it.name.split("-")[0].replace("_", "/") for it in self.get_data_paths(self.timeframe, self.exchange)]
+        self.data_paths = self.on_get_data_paths(self.timeframe, self.exchange)
+        self.data_paths_str = [str(it) for it in self.on_get_data_paths(self.timeframe, self.exchange)]
+        self.pairs = [it.name.split("-")[0].replace("_", "/") for it in self.on_get_data_paths(self.timeframe, self.exchange)]
     
     @abstractmethod
-    def get_data_paths(self, timeframe: str, exchange: str) -> List[Path]:
+    def on_get_data_paths(self, timeframe: str, exchange: str) -> List[Path]:
         """ List of Path to your per pair JSON data consisting of [date, open, high, low, close, volume] columns"""
         raise NotImplementedError()
     
     @abstractmethod
-    def add_features(self, df_per_pair: pd.DataFrame) -> pd.DataFrame:
+    def on_add_features(self, df_per_pair: pd.DataFrame) -> pd.DataFrame:
         """ Define the features of dataset. Called after load data of this pair. 
         NOTE: Must import libraries that features are dependent on. E.G: `import talib.abstract as ta`, etc...
         This will be used when inferencing with freqtrade.
@@ -69,7 +69,7 @@ class TradingLightningModule(ABC):
         raise NotImplementedError()
     
     @abstractmethod
-    def add_labels(self, df_per_pair: pd.DataFrame) -> pd.DataFrame:
+    def on_add_labels(self, df_per_pair: pd.DataFrame) -> pd.DataFrame:
         """ Define the label (target prediction) of per pair data. Called after add_features() 
         NOTE: The label must in column named `self.column_y`!
         ### Example
@@ -83,14 +83,14 @@ class TradingLightningModule(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def final_processing(self, df_combined: pd.DataFrame) -> Tuple[Any, Any, Any, Any]:
+    def on_final_processing(self, df_allpairs: pd.DataFrame) -> Tuple[Any, Any, Any, Any]:
         """ Final processing step for the combined data (all pairs). Called after add_labels()
         Returns: (X_train, X_val, y_train, y_val)
         ### Example
         ```python
-        def final_processing(self, df_combined: pd.DataFrame) -> Tuple[Any, Any, Any, Any]:
-            X = df_combined[self.columns_x]
-            y = df_combined[self.column_y]
+        def final_processing(self, df_allpairs: pd.DataFrame) -> Tuple[Any, Any, Any, Any]:
+            X = df_allpairs[self.columns_x]
+            y = df_allpairs[self.column_y]
             X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=1)
             return X_train, X_val, y_train, y_val
         ```
@@ -98,7 +98,7 @@ class TradingLightningModule(ABC):
         raise NotImplementedError()
     
     @abstractmethod
-    def define_model(self, run: Run, X_train, X_val, y_train, y_val) -> Any:
+    def on_define_model(self, run: Run, X_train, X_val, y_train, y_val) -> Any:
         """ Define your untrained model. Then you can refer to self.MODEL 
         Returns: model object
         ### Example
@@ -110,7 +110,7 @@ class TradingLightningModule(ABC):
         raise NotImplementedError()
     
     @abstractmethod
-    def start_training(self, run: Run, X_train, X_val, y_train, y_val):
+    def on_start_training(self, run: Run, X_train, X_val, y_train, y_val):
         """ Start model training with wandb.init() as run.
         NOTE: Refer to self.model when training!
         ### Simple Example
@@ -128,27 +128,16 @@ class TradingLightningModule(ABC):
         raise NotImplementedError()
     
     @abstractmethod
-    def predict(self, df_input: pd.DataFrame) -> pd.DataFrame:
-        """ Returns the Series of prediction. This inference will be
-            used in strategy.py file loaded from wandb.
-        
-        1. Check if feature columns and datatypes are supported.
-           If not, create new df, convert dtype, then call add_features()
-           
-        NOTE: This method must NOT change the existing input dataframe.
+    def on_predict(self, df_input: pd.DataFrame) -> pd.DataFrame:
+        """ Returns the DataFrame of prediction. This inference will be
+            used in strategy.py file loaded from wandb. The returning
+            DataFrame results may contain multiple columns and modifies the
+            original DataFrame.
         """
         raise NotImplementedError()
     
-    def training_step(self, run: Run, data: dict):
+    def on_training_step(self, run: Run, data: dict):
         """ Called every training step to log process. """
-        raise NotImplementedError()
-    
-    def _pre_training(self, run: Run):
-        """ Pre training checks """
-        raise NotImplementedError()
-    
-    def _post_training(self, run: Run):
-        """ Post training checks """
         raise NotImplementedError()
         
         
