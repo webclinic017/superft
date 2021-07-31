@@ -18,18 +18,25 @@ class LightningContainer:
     """
     module: LightningModule = attr.ib()
     
-    def get_data_paths(self, timeframe: str, exchange: str) -> List[Path]:
-        """ List of Path to your per pair JSON data consisting of [timestamp, open, high, low, close, volume] columns"""
-        return self.module.on_get_data_paths(timeframe, exchange)
+    def configure(self):
+        self.module.config = self.module.on_configure()
     
-    def get_dataset(self) -> pd.DataFrame:
+    def get_data_paths(self, cwd: Path, timeframe: str, exchange: str) -> List[Path]:
+        """ List of Path to your per pair JSON data consisting of [timestamp, open, high, low, close, volume] columns"""
+        return self.module.on_get_data_paths(cwd, timeframe, exchange)
+    
+    def get_dataset(self) -> Tuple[Any, Any, Any, Any]:
         """ Loads the whole DataFrame according to get_data_paths()
         """
+        df_allpairs = self._load_df_allpairs()
+        self.module.config.columns_x = [col for col in df_allpairs.columns if col not in self.module.config.columns_unused]
+        return self.final_processing(df_allpairs)
+    
+    def _load_df_allpairs(self):
+        """ Load helper for all pairs of DataFrame """
         df_list = [
             self._load_one(filepath)
-            for filepath in self.get_data_paths(
-                self.module.timeframe, self.module.exchange
-            )
+            for filepath in self.get_data_paths(Path.cwd(), self.module.config.timeframe, self.module.config.exchange)
         ]
 
         df_allpairs = pd.concat(df_list)
@@ -37,11 +44,6 @@ class LightningContainer:
         df_allpairs = to_fp32(df_allpairs)
 
         free_mem(df_list)
-        
-        print(f"Loaded Pairs: {[it for it in df_allpairs['pair'].unique()]}")
-        
-        self.module.columns_x = [col for col in df_allpairs.columns if col not in self.module.columns_unused]
-        
         return df_allpairs
     
     def _load_one(self, path: Path) -> pd.DataFrame:
@@ -53,65 +55,72 @@ class LightningContainer:
         df_onepair["pair"] = path.name.split("-")[0].replace("_", "/")
         df_onepair["date"] = pd.to_datetime(df_onepair["date"], unit='ms')
         df_onepair = df_onepair.reset_index(drop=True)
-        df_onepair = df_onepair[((df_onepair.date >= self.module.trainval_start) &
-                                 (df_onepair.date <= self.module.trainval_end))]
+        df_onepair = df_onepair[((df_onepair.date >= self.module.config.trainval_start) &
+                                 (df_onepair.date <= self.module.config.trainval_end))]
         
         df_onepair = self.add_features(df_onepair)
         df_onepair = self.add_labels(df_onepair)
         
-        if "ml_label" not in df_onepair.columns:
+        if self.module.config.column_y not in df_onepair.columns:
             raise Exception("Please add your training labels as 'ml_label' column.")
         
         return df_onepair
     
-    def add_features(self, df_per_pair: pd.DataFrame) -> pd.DataFrame:
-        """ Container wrapper for module.add_features()
-        """
-        df_per_pair = to_fp32(df_per_pair)
-        return self.module.on_add_features(df_per_pair)
+    def add_features(self, df_onepair: pd.DataFrame) -> pd.DataFrame:
+        """ Container wrapper for module.add_features()"""
+        df_onepair = to_fp32(df_onepair)
+        return self.module.on_add_features(df_onepair)
 
-    def add_labels(self, df_per_pair: pd.DataFrame) -> pd.DataFrame:
-        """ Container wrapper for module.add_labels()
-        """
-        df_per_pair = to_fp32(df_per_pair)
-        return self.module.on_add_labels(df_per_pair)
+    def add_labels(self, df_onepair: pd.DataFrame) -> pd.DataFrame:
+        """ Container wrapper for module.add_labels() """
+        df_onepair = to_fp32(df_onepair)
+        return self.module.on_add_labels(df_onepair)
     
     def final_processing(self, df_allpairs: pd.DataFrame) -> Tuple[Any, Any, Any, Any]:
-        """ Container wrapper for module.final_processing()
-        """
+        """ Container wrapper for module.final_processing() """
         df_allpairs = to_fp32(df_allpairs)
         X_train, X_val, y_train, y_val = self.module.on_final_processing(df_allpairs)
         free_mem(df_allpairs) 
         return X_train, X_val, y_train, y_val
     
     def define_model(self, run: Run, X_train, X_val, y_train, y_val):
-        """ Container wrapper for module.define_model()
-        """
+        """ Container wrapper for module.define_model() """
         self.module.model = self.module.on_define_model(run, X_train, X_val, y_train, y_val)
     
     def start_training(self, run: Run, X_train, X_val, y_train, y_val):
-        """ Container wrapper for module.start_training()
-        """
+        """ Container wrapper for module.start_training() """
         return self.module.on_start_training(run, X_train, X_val, y_train, y_val)
     
-    def predict(self, df_perpair: pd.DataFrame) -> pd.DataFrame:
-        """ This is a container wrapper for module.predict().
+    def predict(self, df_onepair: pd.DataFrame) -> pd.DataFrame:
+        """ Container wrapper for module.predict().
         Returns the original of DataFrame with prediction columns. 
-        This inference will be used in strategy.py file loaded from wandb.
+        This inference will be used in strategy.py file that loaded from wandb.
         """
-        df_preds = df_perpair.copy()
+        df_preds = df_onepair.copy()
         df_preds = self.add_features(df_preds)
         
         # Drop OHLCV because not needed by on_predict(). TODO: Make sure supports freqtrade df.
-        df_preds = df_preds.drop(columns=self.module.columns_unused)
+        df_preds = df_preds.drop(columns=self.module.config.columns_unused)
+        
+        # Validate X columns.
+        input_only_cols, required_only_cols = list_difference(list(df_preds.columns), self.module.config.columns_x)
+        
+        if 0 not in [len(input_only_cols), len(required_only_cols)]:
+            raise RuntimeError(
+                f"Not identical X columns. Input-only cols: {input_only_cols} | Required-only cols: {required_only_cols}"
+            )
+        
         df_preds = self.module.on_predict(df_preds)
         
-        # Drop feature columns because freqtrade doesn't need it
-        df_preds = df_preds.drop(columns=self.module.columns_x)
+        # Drop X columns because freqtrade doesn't need it.
+        df_preds = df_preds.drop(columns=self.module.config.columns_x)
         
-        # Return original freqtrade dataframe with prediction columns
-        df_perpair[df_preds.columns] = df_preds
-        return df_perpair
+        # Return original freqtrade dataframe with prediction columns.
+        for pred_col in df_preds.columns:
+            if pred_col not in df_onepair.columns:
+                df_onepair[pred_col] = df_preds[pred_col]
+        
+        return df_onepair
     
     def training_step(self, run: Run, data: dict):
         """ Container wrapper for module.training_step()
@@ -127,3 +136,9 @@ def to_fp32(df: pd.DataFrame) -> pd.DataFrame:
             if str(df[col].dtype) in ["float64", "float16"]
         }
     )
+    
+    
+def list_difference(a: list, b: list) -> Tuple[list, list]:
+    a_only = list(set(a) - set(b))
+    b_only = list(set(b) - set(a))
+    return a_only, b_only

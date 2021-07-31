@@ -2,16 +2,30 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Tuple, Any
 from wandb.wandb_run import Run
+from datetime import datetime
 
 import attr
 import pandas as pd
 
 
 @attr.s(repr=False)
-class LightningModule(ABC):
+class LightningConfig:
     """
-    NOTE: Not a PyTorch Lightning module!
-    TODO: Implement numpy version instead of dataframe to train NN.
+    Configuration for LightningModule.
+    Params
+    -----
+    :`name: str` - Model name
+    :`timeframe: str` - example: "1m" or "30m" or "1h"
+    :`exchange: str` - example: "binance"
+    
+    :`trainval_start: datetime` - example: "2021-03-01"
+    :`trainval_end: datetime`   - example: "2021-05-26"
+    
+    :`opt_start: datetime`      - example: "2021-05-27"
+    :`opt_end: datetime`        - example: "2021-06-27"
+    
+    :`test_start: datetime`     - example: "2021-06-28"
+    :`test_end: datetime`       - example: "2021-07-28"
     
     Recommended Date Format
     - Date <= Last 2 months: Train and Val (trainval)
@@ -24,34 +38,66 @@ class LightningModule(ABC):
     exchange: str = attr.ib()
 
     # Training and Val range
-    trainval_start: str = attr.ib(default="2021-03-01")
-    trainval_end: str   = attr.ib(default="2021-05-26")
+    trainval_start: datetime = attr.ib()
+    trainval_end: datetime   = attr.ib()
     # Optimize profits in backtesting range
-    opt_start: str      = attr.ib(default="2021-05-27")
-    opt_end: str        = attr.ib(default="2021-06-27")
+    opt_start: datetime      = attr.ib()
+    opt_end: datetime        = attr.ib()
     # Unbiased backtesting range 
-    test_start: str     = attr.ib(default="2021-06-28")
-    test_end: str       = attr.ib(default="2021-07-28")
+    test_start: datetime     = attr.ib()
+    test_end: datetime       = attr.ib()
     
-    column_y = "ml_label"
+    # DataFrame columns
+    column_y: str = attr.ib(init=False, default="ml_label")
     # Updated after add_lables and before final_processing
-    columns_unused: List[str] = attr.ib(init=False, default=["date", "open", "high", "low", "close", "volume", "pair", column_y])
+    columns_unused: List[str] = attr.ib(init=False, default=["date", "open", "high", "low", "close", "volume", "pair", "ml_label"])
     columns_x: List[str] = attr.ib(init=False, default=None)
+    
+    # Late initialization
+    data_filenames: List[str] = attr.ib(init=False, default=None)
+    pairs: List[str] = attr.ib(init=False, default=None)
+    
+    def set_data_config(self, data_paths: List[Path]):
+        """ Set data paths attribute. """
+        self.data_filenames = [it.name for it in data_paths]
+        self.pairs = [it.name.split("-")[0].replace("_", "/") for it in data_paths]
+
+    def add_custom(self, key: str, value: Any):
+        """ Add custom config attribute """
+        if hasattr(self, key):
+            raise Exception(f"Attribute with key '{key}' already exists!")
+        
+        setattr(self, key, value)
+
+
+@attr.s(repr=False)
+class LightningModule(ABC):
+    """
+    NOTE: Not a PyTorch Lightning module!
+    TODO: Implement numpy version instead of dataframe to train NN.
+    """    
+    config: LightningConfig = None
     # Updated before and after training
-    model = None
+    model: Any = None
     
     def __attrs_post_init__(self):
-        self.data_paths = self.on_get_data_paths(self.timeframe, self.exchange)
-        self.data_paths_str = [str(it) for it in self.on_get_data_paths(self.timeframe, self.exchange)]
-        self.pairs = [it.name.split("-")[0].replace("_", "/") for it in self.on_get_data_paths(self.timeframe, self.exchange)]
+        self.config: LightningConfig = self.on_configure()
+        self.config.set_data_config(
+            data_paths = self.on_get_data_paths(Path.cwd(), self.config.timeframe, self.config.exchange)
+        )
     
     @abstractmethod
-    def on_get_data_paths(self, timeframe: str, exchange: str) -> List[Path]:
+    def on_configure(self) -> LightningConfig:
         """ List of Path to your per pair JSON data consisting of [date, open, high, low, close, volume] columns"""
         raise NotImplementedError()
     
     @abstractmethod
-    def on_add_features(self, df_per_pair: pd.DataFrame) -> pd.DataFrame:
+    def on_get_data_paths(self, cwd: Path, timeframe: str, exchange: str) -> List[Path]:
+        """ List of Path to your per pair JSON data consisting of [date, open, high, low, close, volume] columns"""
+        raise NotImplementedError()
+    
+    @abstractmethod
+    def on_add_features(self, df_onepair: pd.DataFrame) -> pd.DataFrame:
         """ Define the features of dataset. Called after load data of this pair. 
         NOTE: Must import libraries that features are dependent on. E.G: `import talib.abstract as ta`, etc...
         This will be used when inferencing with freqtrade.
@@ -69,14 +115,14 @@ class LightningModule(ABC):
         raise NotImplementedError()
     
     @abstractmethod
-    def on_add_labels(self, df_per_pair: pd.DataFrame) -> pd.DataFrame:
+    def on_add_labels(self, df_onepair: pd.DataFrame) -> pd.DataFrame:
         """ Define the label (target prediction) of per pair data. Called after add_features() 
-        NOTE: The label must in column named `self.column_y`!
+        NOTE: The label must in column named `self.config.column_y`!
         ### Example
         ```python
         def add_labels(self, df_per_pair: pd.DataFrame) -> pd.DataFrame:
             # Classify future returns into 5 classes
-            df_per_pair[self.column_y] = pd.qcut(df_per_pair["future_returns"], 5, labels=False)
+            df_per_pair[self.config.column_y] = pd.qcut(df_per_pair["future_returns"], 5, labels=False)
             return df_per_pair
         ```
         """
@@ -89,8 +135,8 @@ class LightningModule(ABC):
         ### Example
         ```python
         def final_processing(self, df_allpairs: pd.DataFrame) -> Tuple[Any, Any, Any, Any]:
-            X = df_allpairs[self.columns_x]
-            y = df_allpairs[self.column_y]
+            X = df_allpairs[self.config.columns_x]
+            y = df_allpairs[self.config.column_y]
             X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=1)
             return X_train, X_val, y_train, y_val
         ```
@@ -128,7 +174,7 @@ class LightningModule(ABC):
         raise NotImplementedError()
     
     @abstractmethod
-    def on_predict(self, df_input: pd.DataFrame) -> pd.DataFrame:
+    def on_predict(self, df_input_perpair: pd.DataFrame) -> pd.DataFrame:
         """ Returns the DataFrame of prediction. This inference will be
             used in strategy.py file loaded from wandb. The returning
             DataFrame results may contain multiple columns and modifies the

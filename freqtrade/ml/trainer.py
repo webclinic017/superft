@@ -35,9 +35,8 @@ class TradingTrainer:
         """ Start Training Model. Returns LightningContainer with Trained Model. 
         """
         cont = LightningContainer(module)
-        df_allpairs = cont.get_dataset()
         
-        X_train, X_val, y_train, y_val = cont.final_processing(df_allpairs)
+        X_train, X_val, y_train, y_val = cont.get_dataset()
         
         cont.define_model(wandb_run, X_train, X_val, y_train, y_val)
         cont.start_training(wandb_run, X_train, X_val, y_train, y_val)
@@ -50,23 +49,22 @@ class TradingTrainer:
         
         return cont
     
-    # pyright: reportGeneralTypeIssues=false
     def _wandb_log(self, cont: LightningContainer, run: Run):
         """ - Log string and non object attrs as JSON
             - Log whole module object
         """
-        foldername = f"lightning_{cont.module.name}_{get_readable_date()}"
+        foldername = f"lightning_{cont.module.config.name}_{get_readable_date()}"
         
         path_to_folder = Path.cwd() / ".temp" / foldername
         path_to_folder.mkdir()
         
-        with (path_to_folder / "module_attrs.json").open("w") as fs:
-            json.dump(attr.asdict(cont.module), fs, default=str)
+        with (path_to_folder / "configuration.json").open("w") as fs:
+            json.dump(attr.asdict(cont.module.config), fs, default=str, indent=4)
         
         with (path_to_folder / "container.pkl").open("wb") as fs:
             cloudpickle.dump(cont, fs)
             
-        artifact = wandb.Artifact(cont.module.name, type="model_files")
+        artifact = wandb.Artifact(cont.module.config.name, type="lightning_files")
         artifact.add_dir(str(path_to_folder))
-        run.log_artifact(artifact)
+        run.log_artifact(artifact) # pyright: reportGeneralTypeIssues=false
         

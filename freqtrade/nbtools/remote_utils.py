@@ -5,13 +5,16 @@ from pathlib import Path
 from typing import Any, Union
 
 import cloudpickle
+import dill
 import pandas as pd
 from pandas import DataFrame
 
 import wandb
 import logging
+
 from freqtrade.nbtools import constants
 from freqtrade.nbtools.helper import log_execute_time
+from freqtrade.ml.container import LightningContainer
 
 
 os.environ["WANDB_SILENT"] = "true"
@@ -158,9 +161,36 @@ def load_pickle_asset(project, asset_name, version: Union[int, str] = "latest"):
             if not filename.endswith("pkl"):
                 continue
             with (path / filename).open("rb") as f:
-                return cloudpickle.load(f)
+                return dill.load(f)
     
     raise FileNotFoundError(f"No '.pkl' file in '{path}''.")
+
+
+@Memoize
+def load_lightning_container(project, asset_name, version: Union[int, str]) -> LightningContainer:
+    """Used in: Strategy and ftrunner"""
+    
+    if version == "latest":
+        raise Exception("Version 'latest' is not supported for 'load_lightning_container()'!")
+    
+    msg = f"Load LightningContainer version '{version}' of project: '{project}' - asset_name: '{asset_name}'."
+    logger.warning(msg)
+    
+    with wandb.init(project=project) as run:
+        artifact = run.use_artifact(f"{asset_name}:{version}")
+        path = Path.cwd() / artifact.download()
+        
+        for filename in os.listdir(path)[0]:
+            if not filename.endswith("pkl"):
+                continue
+            with (path / filename).open("rb") as f:
+                container = cloudpickle.load(f)
+                if not isinstance(container, LightningContainer):
+                    raise Exception("Not a LightningContainer.")
+                return container
+    
+    raise FileNotFoundError(f"No '.pkl' file in '{path}''.")
+
 
 if __name__ == "__main__":
     print("LOAD 1st")
