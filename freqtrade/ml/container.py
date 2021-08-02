@@ -4,9 +4,12 @@ from wandb.wandb_run import Run
 
 import attr
 import pandas as pd
+import logging
 
 from freqtrade.ml.lightning import LightningModule
 from freqtrade.nbtools.helper import free_mem
+
+logger = logging.getLogger(__name__)
 
 
 @attr.s(repr=False)
@@ -69,12 +72,16 @@ class LightningContainer:
     def add_features(self, df_onepair: pd.DataFrame) -> pd.DataFrame:
         """ Container wrapper for module.add_features()"""
         df_onepair = to_fp32(df_onepair)
-        return self.module.on_add_features(df_onepair)
+        df_onepair = self.module.on_add_features(df_onepair)
+        df_onepair = df_onepair.dropna()
+        return df_onepair
 
     def add_labels(self, df_onepair: pd.DataFrame) -> pd.DataFrame:
         """ Container wrapper for module.add_labels() """
         df_onepair = to_fp32(df_onepair)
-        return self.module.on_add_labels(df_onepair)
+        df_onepair = self.module.on_add_labels(df_onepair)
+        df_onepair = df_onepair.dropna()
+        return df_onepair
     
     def final_processing(self, df_allpairs: pd.DataFrame) -> Tuple[Any, Any, Any, Any]:
         """ Container wrapper for module.final_processing() """
@@ -96,31 +103,32 @@ class LightningContainer:
         Returns the original of DataFrame with prediction columns. 
         This inference will be used in strategy.py file that loaded from wandb.
         """
+        df_original = df_onepair.copy()
         df_preds = df_onepair.copy()
         df_preds = self.add_features(df_preds)
         
-        # Drop OHLCV because not needed by on_predict(). TODO: Make sure supports freqtrade df.
-        df_preds = df_preds.drop(columns=self.module.config.columns_unused)
-        
-        # Validate X columns.
-        input_only_cols, required_only_cols = list_difference(list(df_preds.columns), self.module.config.columns_x)
-        
-        if 0 not in [len(input_only_cols), len(required_only_cols)]:
-            raise RuntimeError(
-                f"Not identical X columns. Input-only cols: {input_only_cols} | Required-only cols: {required_only_cols}"
-            )
+        # Only use X columns.
+        df_preds = df_preds[self.module.config.columns_x]
         
         df_preds = self.module.on_predict(df_preds)
         
-        # Drop X columns because freqtrade doesn't need it.
-        df_preds = df_preds.drop(columns=self.module.config.columns_x)
+        try:
+            # Drop X columns because freqtrade doesn't need it.
+            df_preds = df_preds.drop(columns=self.module.config.columns_x)
+        except KeyError:
+            print("Not dropping X columns")
+        
+        print(f"Returned columns from df_preds: {list(df_preds.columns)}")
         
         # Return original freqtrade dataframe with prediction columns.
         for pred_col in df_preds.columns:
-            if pred_col not in df_onepair.columns:
-                df_onepair[pred_col] = df_preds[pred_col]
+            if pred_col not in df_original.columns:
+                df_original[pred_col] = df_preds[pred_col].copy()
         
-        return df_onepair
+        free_mem(df_onepair)
+        free_mem(df_preds)
+        
+        return df_original
     
     def training_step(self, run: Run, data: dict):
         """ Container wrapper for module.training_step()
