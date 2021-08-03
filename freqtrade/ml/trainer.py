@@ -10,7 +10,8 @@ import wandb
 import json
 
 from freqtrade.ml.lightning import LightningModule
-from freqtrade.ml.container import LightningContainer
+from freqtrade.ml.container import LightningContainer, list_difference
+from freqtrade.ml.loader import load_df
 from freqtrade.nbtools.helper import free_mem, get_readable_date
 
 
@@ -47,6 +48,8 @@ class TradingTrainer:
         if log_wandb:
             self._wandb_log(cont, wandb_run)
         
+        self.validate_predict(cont)
+        
         return cont
     
     def _wandb_log(self, cont: LightningContainer, run: Run):
@@ -68,3 +71,38 @@ class TradingTrainer:
         artifact.add_dir(str(path_to_folder))
         run.log_artifact(artifact) # pyright: reportGeneralTypeIssues=false
         
+    def validate_predict(self, cont: LightningContainer):
+        """ Validate model container predict function:
+        - Type of df_predict must DataFrame
+        - There must be a new columns in the df_predict DataFrame
+        - df_predict length must same as the df_original
+        - df_predict index must not changed
+        """
+        df_original: pd.DataFrame = load_df("BTC_USDT-5m.json", "5m").iloc[:5000]
+        df_predict = df_original.copy()
+        df_predict = cont.predict(df_predict)
+        
+        # Type of df_predict must DataFrame
+        if not isinstance(df_predict, pd.DataFrame):
+            raise TypeError(f"'df_predict' type is '{type(df_predict)}'. needed: DataFrame")
+        
+        # df_predict length must same as the df_original
+        if len(df_predict) != len(df_original):
+            raise ValueError(
+                "Length of df_predict must same as the length of df_original."
+                f"len(df_predict) = {len(df_predict)}, len(df_original) = {len(df_original)}"
+            )
+            
+        # df_predict index must not changed
+        if not df_original.index.equals(df_predict.index):
+            raise ValueError(f"df_predict index must same as df_original index. ")
+        
+        # There must be a new columns in the df_predict DataFrame
+        df_predict_cols = df_predict.columns.tolist()
+        if df_original.columns.tolist() == df_predict_cols:
+            raise ValueError(f"'df_predict' columns is same as df_original.")
+        
+        new_columns = list_difference(df_predict_cols, df_original.columns.tolist())
+        print("PASSED! New columns from prediction")
+        print(df_predict[new_columns].info())
+        print(df_predict[new_columns].head())

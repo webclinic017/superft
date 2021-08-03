@@ -5,7 +5,8 @@ from wandb.wandb_run import Run
 import attr
 import pandas as pd
 import logging
-
+    
+from freqtrade.ml.loader import clean_ohlcv_dataframe
 from freqtrade.ml.lightning import LightningModule
 from freqtrade.nbtools.helper import free_mem
 
@@ -32,10 +33,9 @@ class LightningContainer:
         """ Loads the whole DataFrame according to get_data_paths()
         """
         df_allpairs = self._load_df_allpairs()
-        self.module.config.columns_x = [col for col in df_allpairs.columns if col not in self.module.config.columns_unused]
         return self.final_processing(df_allpairs)
     
-    def _load_df_allpairs(self):
+    def _load_df_allpairs(self) -> pd.DataFrame:
         """ Load helper for all pairs of DataFrame """
         df_list = [
             self._load_one(filepath)
@@ -45,6 +45,12 @@ class LightningContainer:
         df_allpairs = pd.concat(df_list)
         df_allpairs = df_allpairs.dropna()
         df_allpairs = to_fp32(df_allpairs)
+        
+        # Validate columns
+        self.module.config.columns_x = [col for col in df_allpairs.columns if col not in self.module.config.columns_unused]
+        
+        if self.module.config.column_y not in df_allpairs.columns:
+            raise Exception("Please add your training labels as 'ml_label' column.")
 
         free_mem(df_list)
         return df_allpairs
@@ -56,7 +62,7 @@ class LightningContainer:
         df_onepair = pd.read_json(path)
         df_onepair.columns = headers
         df_onepair["pair"] = path.name.split("-")[0].replace("_", "/")
-        df_onepair["date"] = pd.to_datetime(df_onepair["date"], unit='ms')
+        df_onepair["date"] = pd.to_datetime(df_onepair["date"], unit='ms', utc=True, infer_datetime_format=True)
         df_onepair = df_onepair.reset_index(drop=True)
         df_onepair = df_onepair[((df_onepair.date >= self.module.config.trainval_start) &
                                  (df_onepair.date <= self.module.config.trainval_end))]
@@ -64,16 +70,19 @@ class LightningContainer:
         df_onepair = self.add_features(df_onepair)
         df_onepair = self.add_labels(df_onepair)
         
-        if self.module.config.column_y not in df_onepair.columns:
-            raise Exception("Please add your training labels as 'ml_label' column.")
-        
-        return df_onepair
+        return clean_ohlcv_dataframe(df_onepair, self.module.config.timeframe, fill_missing=True, drop_incomplete=True)
     
-    def add_features(self, df_onepair: pd.DataFrame) -> pd.DataFrame:
+    def add_features(self, df_onepair: pd.DataFrame, dropna_alternative: bool = False) -> pd.DataFrame:
         """ Container wrapper for module.add_features()"""
         df_onepair = to_fp32(df_onepair)
         df_onepair = self.module.on_add_features(df_onepair)
-        df_onepair = df_onepair.dropna()
+        
+        if dropna_alternative:
+            # Changes all na values to number
+            df_onepair = df_onepair.fillna(0.1)
+        else:
+            df_onepair = df_onepair.dropna()
+        
         return df_onepair
 
     def add_labels(self, df_onepair: pd.DataFrame) -> pd.DataFrame:
@@ -105,7 +114,7 @@ class LightningContainer:
         """
         df_original = df_onepair.copy()
         df_preds = df_onepair.copy()
-        df_preds = self.add_features(df_preds)
+        df_preds = self.add_features(df_preds, dropna_alternative=True)
         
         # Only use X columns.
         df_preds = df_preds[self.module.config.columns_x]
