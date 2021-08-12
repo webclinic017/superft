@@ -15,9 +15,11 @@ def load_df(path_json: Path, timeframe: str):
     d1 = pd.read_json(path_json)
     d1.columns = headers
     d1["date"] = pd.to_datetime(d1["date"], unit='ms', utc=True, infer_datetime_format=True)
-    d1 = d1.reset_index(drop=True)
-    d1 = to_fp32(d1)
-    return clean_ohlcv_dataframe(d1, timeframe, fill_missing=True, drop_incomplete=True)
+    d1 = d1.astype(
+        dtype={'open': 'float', 'high': 'float', 'low': 'float', 'close': 'float', 'volume': 'float'}
+    )
+    d1 = clean_ohlcv_dataframe(d1, timeframe, fill_missing=True, drop_incomplete=True)
+    return d1
 
 
 def to_fp32(df: pd.DataFrame) -> pd.DataFrame:

@@ -8,11 +8,15 @@ import cloudpickle
 import pandas as pd
 import wandb
 import json
+import logging
+import numpy as np
 
 from freqtrade.ml.lightning import LightningModule
 from freqtrade.ml.container import LightningContainer, list_difference
 from freqtrade.ml.loader import load_df
 from freqtrade.nbtools.helper import free_mem, get_readable_date
+
+logger = logging.getLogger(__name__)
 
 
 @attr.s
@@ -40,6 +44,14 @@ class TradingTrainer:
         X_train, X_val, y_train, y_val = cont.get_dataset()
         
         cont.define_model(wandb_run, X_train, X_val, y_train, y_val)
+        
+        try:
+            self.validate_predict(cont)
+        except Exception as e:
+            logging.warning(f"ERROR on validating predict function: `{e}`")
+            logging.warning(f"Please run `trainer.validate_predict()` after training finished!")
+            logging.warning(f"Otherwise, future runtime errors may occur.")
+        
         cont.start_training(wandb_run, X_train, X_val, y_train, y_val)
         
         for clean in [X_train, X_val, y_train, y_val]:
@@ -47,9 +59,7 @@ class TradingTrainer:
         
         if log_wandb:
             self._wandb_log(cont, wandb_run)
-        
-        self.validate_predict(cont)
-        
+            
         return cont
     
     def _wandb_log(self, cont: LightningContainer, run: Run):
@@ -78,13 +88,26 @@ class TradingTrainer:
         - df_predict length must same as the df_original
         - df_predict index must not changed
         """
-        df_original: pd.DataFrame = load_df("BTC_USDT-5m.json", "5m").iloc[:5000]
+        df_original: pd.DataFrame = load_df("BTC_USDT-5m.json", "5m").loc[410000:414000]
         df_predict = df_original.copy()
         df_predict = cont.predict(df_predict)
+        df_vanilla_preds = self.vanilla_predict(cont, df_original)
         
         # Type of df_predict must DataFrame
         if not isinstance(df_predict, pd.DataFrame):
-            raise TypeError(f"'df_predict' type is '{type(df_predict)}'. needed: DataFrame")
+            raise TypeError(f"'df_predict' type is '{type(df_predict)}'. needed: pandas.DataFrame")
+        
+        print("\nDataset: Binance BTC/USDT 5m loc[410000:414000] (Freqtrade Regularized)")
+        print("\n\nDF WITH PREDICTIONS INFO\n----------")
+        print(df_predict.info())
+        print("\n\nOriginal DF\n----------")
+        print(df_original)
+        print("\n\nWith Prediction DF\n----------")
+        print(df_predict)
+        print("\n\nVanilla Prediction DF [MAKE SURE SAME!]\n----------")
+        print(df_vanilla_preds)
+        print("\nLEN VANILLA PREDS: %s" % len(df_vanilla_preds))
+        print("LEN WITH PREDS NON NAN: %s" % len(df_predict.dropna()))
         
         # df_predict length must same as the df_original
         if len(df_predict) != len(df_original):
@@ -102,7 +125,31 @@ class TradingTrainer:
         if df_original.columns.tolist() == df_predict_cols:
             raise ValueError(f"'df_predict' columns is same as df_original.")
         
-        new_columns = list_difference(df_predict_cols, df_original.columns.tolist())
-        print("PASSED! New columns from prediction")
-        print(df_predict[new_columns].info())
-        print(df_predict[new_columns].head())
+        cols_new_predict, cols_new_original = list_difference(df_predict_cols, df_original.columns.tolist())
+        if len(cols_new_predict) <= 0:
+            raise ValueError(f"No new columns in 'df_predict'")
+        
+        # The original data must not changed
+        original_columns = ["date", "open", "high", "low", "close", "volume"]
+        changed_cols = [col for col in original_columns if not df_predict[col].equals(df_original[col])]
+        if len(changed_cols) > 0:
+            raise ValueError(f"Changed original columns: {changed_cols}")
+        
+        # There are no columns full of NaN or InF
+        invalids = [it for it in list(df_predict.columns) if df_predict[it].isnull().all()]
+        if len(invalids) > 0:
+            raise ValueError(f"Invalid (Full of NaN / InF Columns): {invalids}")
+        
+        # Length of vanilla predictions must same
+        if len(df_vanilla_preds) != len(df_predict.dropna()):
+            raise ValueError("Length of Vanilla Predict and Non-NAN aren't same.")
+        
+        # It passed!
+        print("\nPASSED: The model passed the validation test!")        
+        return df_predict
+        
+    def vanilla_predict(self, container: LightningContainer, df_original_: pd.DataFrame) -> pd.DataFrame:
+        """ Predict without going through the container's predict processing """
+        df_original = container.add_features(df_original_.copy())
+        df_original = df_original[container.module.config.columns_x]
+        return container.module.on_predict(df_original)
