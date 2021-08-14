@@ -56,7 +56,7 @@ def get_class_from_string(code: str, clsname: str) -> Any:
     return getattr(stratmodule, clsname)
 
 
-def get_function_body(func):
+def get_function_body(func) -> str:
     source_lines = inspect.getsourcelines(func)[0]
     source_lines = dropwhile(lambda x: x.startswith("@"), source_lines)
     source = "".join(source_lines)
@@ -64,9 +64,8 @@ def get_function_body(func):
     lines = pattern.search(source).group(2).splitlines()
     if len(lines) == 1:
         return lines[0]
-    else:
-        indentation = len(lines[1]) - len(lines[1].lstrip())
-        return "\n".join([lines[0]] + [line[indentation:] for line in lines[1:]])
+    indentation = len(lines[1]) - len(lines[1].lstrip())
+    return "\n".join([lines[0]] + [line[indentation:] for line in lines[1:]])
 
 
 def log_execute_time(name: str = None):

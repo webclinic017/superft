@@ -1,8 +1,16 @@
 from pathlib import Path
+from matplotlib import dates
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 import pandas as pd
-from matplotlib import dates
+
+
+def parse_dtstring(string: str):
+    """ From: 20201231
+        To: 2020-12-31
+    """
+    return datetime.strptime(string, "%Y%m%d").strftime("%Y-%m-%d")
 
 
 # pyright: reportGeneralTypeIssues=false
@@ -82,3 +90,17 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     df = pd.DataFrame({k: [v] for k, v in portfolio_summary.items()}).T
     df.columns = ["Portfolio Summary"]
     return df   
+
+
+def plot_profits_timerange(trades_data: pd.DataFrame, timerange: str, path_mount: Path):
+    start_stop = timerange.split("-")
+    
+    if len(start_stop) == 1:
+        start = parse_dtstring(start_stop[0])
+        stop = "2022-12-30"
+    elif len(start_stop) == 2:
+        start, stop = parse_dtstring(start_stop[0]), parse_dtstring(start_stop[1])
+    else:
+        raise ValueError(f"Unknown timerange: '{timerange}' ")
+    
+    return plot_profits(trades_data, start, stop, path_mount)

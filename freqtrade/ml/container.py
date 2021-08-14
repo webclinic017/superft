@@ -8,7 +8,7 @@ import logging
 import numpy as np
     
 from freqtrade.ml.loader import clean_ohlcv_dataframe
-from freqtrade.ml.lightning import LightningModule
+from freqtrade.ml.lightning import LightningModule, LightningConfig
 from freqtrade.nbtools.helper import free_mem
 
 logger = logging.getLogger(__name__)
@@ -22,9 +22,11 @@ class LightningContainer:
         In other words, this improves reusability.
     """
     module: LightningModule = attr.ib()
+    config: LightningConfig = attr.ib(init=False)
     
     def configure(self):
         self.module.config = self.module.on_configure()
+        self.config = self.module.config
     
     def get_data_paths(self, cwd: Path, timeframe: str, exchange: str) -> List[Path]:
         """ List of Path to your per pair JSON data consisting of [timestamp, open, high, low, close, volume] columns"""

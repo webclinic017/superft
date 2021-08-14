@@ -34,9 +34,9 @@ class Memoize:
         self.fn = fn
         self.memo = {}
 
-    def __call__(self, *args):
+    def __call__(self, *args, **kwargs):
         if args not in self.memo:
-            self.memo[args] = self.fn(*args)
+            self.memo[args] = self.fn(*args, **kwargs)
         return self.memo[args]
 
 
@@ -170,26 +170,24 @@ def load_pickle_asset(project, asset_name, version: Union[int, str] = "latest"):
 def load_lightning_container(project, asset_name, version: Union[int, str]) -> LightningContainer:
     """Used in: Strategy and ftrunner"""
     
-    if version == "latest":
-        raise Exception("Version 'latest' is not supported for 'load_lightning_container()'!")
-    
     msg = f"Load LightningContainer version '{version}' of project: '{project}' - asset_name: '{asset_name}'."
     logger.warning(msg)
+    
+    if version == "latest":
+        logger.warning("WARNING: You are using the LATEST version of LightningContainer asset!")
     
     with wandb.init(project=project) as run:
         artifact = run.use_artifact(f"{asset_name}:{version}")
         path = Path.cwd() / artifact.download()
         
-        for filename in os.listdir(path)[0]:
-            if not filename.endswith("pkl"):
-                continue
-            with (path / filename).open("rb") as f:
+        for fpath in path.glob("*.pkl"):
+            with fpath.open("rb") as f:
                 container = cloudpickle.load(f)
                 if not isinstance(container, LightningContainer):
                     raise Exception("Not a LightningContainer.")
                 return container
-    
-    raise FileNotFoundError(f"No '.pkl' file in '{path}''.")
+        print(list(path.glob("*")))
+        raise FileNotFoundError(f"No '.pkl' file in '{path}''.")
 
 
 if __name__ == "__main__":
