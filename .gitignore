@@ -103,3 +103,4 @@ target/
 #exceptions
 !*.gitkeep
 artifacts/table-metadata-v0/metadata.table.json
+catboost_info/*
