@@ -8,6 +8,7 @@ import cloudpickle
 import dill
 import pandas as pd
 from pandas import DataFrame
+from functools import cache
 
 import wandb
 import logging
@@ -148,7 +149,6 @@ def add_single_asset(path, project, asset_name):
         run.log_artifact(artifact)
 
 
-@Memoize
 def load_pickle_asset(project, asset_name, version: Union[int, str] = "latest"):
     """Used in: Strategy and ftrunner"""
     msg = f"Load version '{version}' of pickle asset for project: '{project}' - asset_name: '{asset_name}'"
@@ -166,7 +166,6 @@ def load_pickle_asset(project, asset_name, version: Union[int, str] = "latest"):
     raise FileNotFoundError(f"No '.pkl' file in '{path}''.")
 
 
-@Memoize
 def load_lightning_container(project, asset_name, version: Union[int, str]) -> LightningContainer:
     """Used in: Strategy and ftrunner"""
     

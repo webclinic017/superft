@@ -25,7 +25,7 @@ from freqtrade.strategy.interface import IStrategy
 from freqtrade.wallets import Wallets
 from freqtrade.nbtools import constants
 
-from .helper import Capturing, get_class_from_string, get_function_body, get_readable_date, log_execute_time
+from .helper import Capturing, get_class_from_string, parse_function_body, get_readable_date, log_execute_time
 from .preset import BasePreset, ConfigPreset, LocalPreset, CloudPreset
 from .configuration import setup_optimize_configuration
 from .remote_utils import cloud_retrieve_preset, preset_log, table_add_row
@@ -47,14 +47,14 @@ class NbBacktesting(Backtesting):
 
     
     @log_execute_time("Backtest")
-    def start_nb_backtesting(self, strategy_code: str) -> Tuple[dict, str]:
+    def start_nb_backtesting(self, parsed_strategy_code: str, clsname: str) -> Tuple[dict, str]:
         """
         Run backtesting end-to-end
         :return: None
         """
         logger.info("Backtesting...")
 
-        strategy = get_class_from_string(strategy_code, "NotebookStrategy")(self.config)
+        strategy = get_class_from_string(parsed_strategy_code, clsname)(self.config)
         strategy = process_strategy(strategy, self.config)
         self.strategylist.append(strategy)
         self.exchange = ExchangeResolver.load_exchange(self.config["exchange"]["name"], self.config)
@@ -190,7 +190,7 @@ def process_strategy(strategy: IStrategy, config: Dict[str, Any] = None) -> IStr
 
 
 @log_execute_time("Whole Backtesting Process (Backtest + Log)")
-def backtest(preset: BasePreset, strategy: Union[str, Callable[[], None]]):
+def backtest(preset: BasePreset, strategy: Union[str, Callable[[], None]], clsname: str = "NotebookStrategy"):
     """ Start freqtrade backtesting. Callable in notebook.
         preset: Any kind of Preset (ConfigPreset, LocalPreset, CloudPreset)
         strategy: str or function that has strategy code
@@ -198,14 +198,16 @@ def backtest(preset: BasePreset, strategy: Union[str, Callable[[], None]]):
     config_backtesting, config_optimize = preset.get_configs()
     
     if callable(strategy):
-        strategy_code = get_function_body(strategy)
+        parsed_strategy_code = parse_function_body(strategy)
+    elif isinstance(strategy, str):
+        parsed_strategy_code = strategy
     else:
-        strategy_code = strategy
+        raise ValueError("Strategy must instance of Callable or plain String (from strategy code)")
     
     backtester = NbBacktesting(config_optimize)
-    stats, summary = backtester.start_nb_backtesting(strategy_code)
+    stats, summary = backtester.start_nb_backtesting(parsed_strategy_code, clsname)
     
-    log_preset(preset, strategy_code, stats, config_backtesting, config_optimize)
+    log_preset(preset, parsed_strategy_code, stats, config_backtesting, config_optimize)
     
     return stats, summary
 
@@ -281,8 +283,13 @@ def generate_metadata(
     current_date: str) -> Dict[str, Any]:
     """Generate backtest summary in dict to be exported in json format"""
 
-    trades = pd.DataFrame(deepcopy(stats["strategy"]["NotebookStrategy"]["trades"]))
-    trades_summary = deepcopy(stats["strategy"]["NotebookStrategy"])
+    strats = list(stats["strategy"].keys())
+    if len(strats) > 1:
+        raise ValueError(f"Got strats `{strats}`")
+    clsname = strats[0]
+        
+    trades = pd.DataFrame(deepcopy(stats["strategy"][clsname]["trades"]))
+    trades_summary = deepcopy(stats["strategy"][clsname])
     current_date_fmt = current_date.split("_")[0] + " " + current_date.split("_")[1].replace("-", ":")
     
     # You can add or remove any columns you want here

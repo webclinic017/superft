@@ -3,9 +3,10 @@ from pathlib import Path
 from wandb.wandb_run import Run
 
 import attr
-import pandas as pd
 import logging
 import numpy as np
+import os
+import pandas as pd
     
 from freqtrade.ml.loader import clean_ohlcv_dataframe
 from freqtrade.ml.lightning import LightningModule, LightningConfig
@@ -24,8 +25,7 @@ class LightningContainer:
     module: LightningModule = attr.ib()
     config: LightningConfig = attr.ib(init=False)
     
-    def configure(self):
-        self.module.config = self.module.on_configure()
+    def __attrs_post_init__(self):
         self.config = self.module.config
     
     def get_data_paths(self, cwd: Path, timeframe: str, exchange: str) -> List[Path]:
@@ -62,7 +62,7 @@ class LightningContainer:
         """ Load helper for one DataFrame by path.
         """
         headers = ["date", "open", "high", "low", "close", "volume"]
-        df_onepair: pd.DataFrame = pd.read_json(path)
+        df_onepair = pd.read_json(path)
         df_onepair.columns = headers
         
         df_onepair["date"] = pd.to_datetime(df_onepair["date"], unit='ms', utc=True, infer_datetime_format=True)

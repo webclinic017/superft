@@ -56,8 +56,9 @@ def get_class_from_string(code: str, clsname: str) -> Any:
     return getattr(stratmodule, clsname)
 
 
-def get_function_body(func) -> str:
-    source_lines = inspect.getsourcelines(func)[0]
+def parse_function_body(func) -> str:
+    source_lines = inspect.getsource(func)
+    source_lines = source_lines.splitlines(keepends=True)
     source_lines = dropwhile(lambda x: x.startswith("@"), source_lines)
     source = "".join(source_lines)
     pattern = re.compile(r"(async\s+)?def\s+\w+\s*\(.*?\)\s*:\s*(.*)", flags=re.S)

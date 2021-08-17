@@ -1,13 +1,9 @@
-get_ipython().run_line_magic("load_ext", " autoreload")
-get_ipython().run_line_magic("autoreload", " 2")
-
 from pathlib import Path
 from typing import List, Callable, Tuple, Any
 from wandb.wandb_run import Run
 from datetime import datetime, timedelta
-
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+from catboost import CatBoostClassifier
 
 import attr
 import pandas as pd
@@ -34,7 +30,7 @@ while "freqtrade" not in os.listdir():
 from freqtrade.ml.lightning import LightningModule, LightningConfig
 from freqtrade.ml.trainer import TradingTrainer
 from freqtrade.ml.container import LightningContainer
-from freqtrade.ml import loader
+from freqtrade.ml import loader, lightning_utils
 
 from freqtrade.nbtools.helper import free_mem
 from freqtrade.nbtools.pairs import PAIRS_HIGHCAP_NONSTABLE
@@ -47,9 +43,8 @@ if container is not None:
     
 gc.collect()
 
-
 attr.s(repr=False)
-class RandomForest(LightningModule):
+class CatBoost(LightningModule):
     """ Template for LightningModule """
         
     def on_configure(self) -> LightningConfig:
@@ -61,7 +56,7 @@ class RandomForest(LightningModule):
         config = LightningConfig(
             
             # Basic info
-            name        = "5n20-randomforest",
+            name        = "5n20-catboosttest",
             timeframe   = "5m",
             exchange    = "binance",
             
@@ -79,7 +74,7 @@ class RandomForest(LightningModule):
         )
         
         # Optional custom config attributes
-        config.add_custom("num_epochs", 1000)
+        config.add_custom("num_epochs", 20000)
         config.add_custom("num_future_candles", 4)
         config.add_custom("num_classification_classes", 3)
         
@@ -146,72 +141,31 @@ class RandomForest(LightningModule):
         return df_allpairs_copy
     
     def on_define_model(self, run: Run, X_train, X_val, y_train, y_val) -> Any:
-        return RandomForestClassifier(max_depth=4, random_state=0)
+        return CatBoostClassifier(
+            iterations=self.config.num_epochs, 
+            task_type="GPU",
+         )
     
     def on_start_training(self, run: Run, X_train, X_val, y_train, y_val):
         print("Start Training...")
-        self.model: RandomForestClassifier
-        self.model.fit(X_train, y_train)
+        self.model: CatBoostClassifier
+        self.model.fit(
+            X_train, y_train,
+            eval_set=[(X_val, y_val)]
+        )
+        print("Accuracy: %.2f" % self.model.score(X_val, y_val))
     
     def on_predict(self, df_input_onepair: pd.DataFrame) -> pd.DataFrame:
         df_input_np = df_input_onepair.to_numpy()
         preds = self.model.predict_proba(df_input_np)
-        df_preds = pd.DataFrame(preds)
-        
-        return df_preds
+        return pd.DataFrame(preds)
     
     def on_training_step(self, run: Run, data: dict):
         raise NotImplementedError()
 
 
-module = RandomForest()
+module = CatBoost()
 
-
-df_ = LightningContainer(module)._load_df_allpairs()
-dates = df_["date"]
-df_ = df_[module.config.columns_x + [module.config.column_y]]
-
-
-def dataframe_statistics(df_: pd.DataFrame):
-    # Detect nan, infinity, and too large values in dataset
-    print("N rows na:", str(df_.shape[0] - df_.dropna().shape[0]))
-    print("N rows inf:", str(df_.shape[0] - df_.replace([np.inf, -np.inf], np.nan).dropna().shape[0]))
-    print("Cols na:", str(df_.columns[df_.isna().any()].tolist()))
-    print("Cols inf:", str(list(df_.columns.to_series()[np.isinf(df_).any()])))
-
-    # Detect columns with irregular datatypes
-    supported_datatypes = ["float32"]
-    print("Irregular (col, dtypes):", str([(it, df_[it].dtype) for it in df_.columns if df_[it].dtype not in supported_datatypes]))
-
-    # Dataset statistics
-    print("Dataset Length: %s" % len(df_))
-    print("Date Min: %s" % dates.min())
-    print("Date Max: %s" % dates.max())
-    
-dataframe_statistics(df_)
-
-
-free_mem(df_)
 with wandb.init(project=module.config.name) as run:
     trainer = TradingTrainer()
-    container = trainer.fit(module, run, False)
-
-
-# Validate prediction function by simulate inserting freqtrade data into predict function
-df_with_preds = trainer.validate_predict(container)
-df_with_preds
-
-
-dataframe_statistics(df_with_preds)
-
-
-if container is None:
-    container = LightningContainer(module)
-    
-df = container._load_df_allpairs()
-df.head()
-
-
-eth_usdt = df.loc[df["pair"] == "ETH/USDT"]
-eth_usdt = eth_usdt.drop(columns=["pair"])
-eth_usdt.head()
+    container = trainer.fit(module, run, True)

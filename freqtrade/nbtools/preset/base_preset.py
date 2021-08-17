@@ -35,6 +35,7 @@ class BasePreset(ABC):
     stake_amount: Optional[float] = attr.ib(init=False)
     max_open_trades: Optional[int] = attr.ib(init=False)
     fee: Optional[float] = attr.ib(init=False)
+    strategy_search_path: Optional[Path] = attr.ib(init=False)
 
     def __attrs_pre_init__(self):
         setattr(self, "pairs", None)
@@ -43,6 +44,7 @@ class BasePreset(ABC):
         setattr(self, "stake_amount", None)
         setattr(self, "max_open_trades", None)
         setattr(self, "fee", None)
+        setattr(self, "strategy_search_path", None)
 
     def get_config_optimize(self, config_backtesting: dict) -> dict:
         """ Overwrite config_backtesting (if any overwrites) then get the configuration 
@@ -80,6 +82,7 @@ class BasePreset(ABC):
             "datadir": self.path_data / config_backtesting["exchange"]["name"],
             "timerange": self.timerange,
         }
+        # TODO: "strategy_path" as string
         
         logger.info(f"Setting arg `datadir` to {args['datadir']}")
         logger.info(f"Setting arg `timerange` to {args['timerange']}")
@@ -93,6 +96,7 @@ class BasePreset(ABC):
                          stake_amount: Optional[float] = None,
                          max_open_trades: Optional[int] = None,
                          fee: Optional[float] = None,
+                         strategy_search_path: Optional[Path] = None
                          ):
         # Loop through this function args, set key if not None
         for key, value in locals().items():
