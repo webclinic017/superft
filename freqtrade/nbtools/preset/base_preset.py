@@ -78,11 +78,14 @@ class BasePreset(ABC):
             logger.info(f"Overwriting max open trades from {config_backtesting['fee']} to {self.fee}")
             config_backtesting.update({"fee": self.fee})
 
+        if self.strategy_search_path is not None:
+            logger.info(f"Add strategy search path {self.strategy_search_path}")
+            config_backtesting.update({"strategy_path": self.strategy_search_path})
+
         args = {
             "datadir": self.path_data / config_backtesting["exchange"]["name"],
             "timerange": self.timerange,
         }
-        # TODO: "strategy_path" as string
         
         logger.info(f"Setting arg `datadir` to {args['datadir']}")
         logger.info(f"Setting arg `timerange` to {args['timerange']}")

@@ -19,8 +19,12 @@
 			"c:\\CS\\Python\\crypto-collection\\freqtrade\\superft\\tests",
 			"c:\\CS\\Python\\crypto-collection\\freqtrade\\superft_run",
 			"c:\\CS\\Python\\crypto-collection\\freqtrade\\mount\\presets",
-			"c:\\CS\\Python\\crypto-collection\\freqtrade\\mount\\__play__.py",
-			"c:\\CS\\Python\\crypto-collection\\freqtrade\\superft\\freqtrade\\ml"
-		]
+			"c:\\CS\\Python\\crypto-collection\\freqtrade\\superft\\freqtrade\\ml",
+			"c:\\CS\\Python\\crypto-collection\\freqtrade\\mount\\presets\\.strategy_files",
+			"c:\\CS\\Python\\crypto-collection\\freqtrade\\superft\\__play__.py",
+			"c:\\CS\\Python\\crypto-collection\\freqtrade\\superft\\__play2__.py",
+			"c:\\CS\\Python\\crypto-collection\\freqtrade\\superft\\__play1__.py"
+		],
+		"favorites.sortOrder": "DESC"
 	}
 }

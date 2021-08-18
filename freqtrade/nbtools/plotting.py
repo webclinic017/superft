@@ -30,13 +30,14 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     grid_alpha = 0.1
 
     # Section 1.1: BTC/USDT price over time
-    btc_usdt_df = pd.read_json(path_mount / "data" / "binance" / "BTC_USDT-15m.json")
+    btc_usdt_df = pd.read_json(path_mount / "data" / "binance" / "BTC_USDT-1h.json")
     btc_usdt_df.columns = ["date", "open", "high", "low", "close", "volume"]
     btc_usdt_df["date"] = pd.to_datetime(btc_usdt_df["date"], unit="ms", utc=True)
     btc_usdt = btc_usdt_df.loc[(btc_usdt_df["date"] >= start) & (btc_usdt_df["date"] <= end)]
     btc_usdt = btc_usdt.set_index("date").resample("1h").mean()
+    # btc_usdt = btc_usdt.set_index("date").resample("1h").mean()
     fig, ax1 = plt.subplots(figsize=(18, 5))
-    ax1.plot(btc_usdt["close"], color="orange", label="BTC/USDT")
+    ax1.plot(btc_usdt["close"], color="orange", label="BTC/USDT", alpha=0.5)
     ax1.tick_params(axis="y", labelcolor="orange")
 
     # Section 1.2: Cumulative profit $ over time
