@@ -48,7 +48,7 @@ def preset_log(run, preset_directory: str, preset_name: str):
 
 
 def table_retrieve(project: str, artifact_name: str, table_key: str) -> pd.DataFrame:
-    with wandb.init(project=project) as run:
+    with wandb.init(project=project, name=f"retrieve_table_{artifact_name}_{table_key}") as run:
         my_table = run.use_artifact(f"{artifact_name}:latest").get(f"{table_key}")
         return pd.DataFrame(my_table.data, columns=my_table.columns)
 
@@ -78,7 +78,7 @@ def table_add_row(run, row_dict: dict, project: str, artifact_name: str, table_k
             for col in added_cols:
                 cloud_df[col] = None
 
-            table_update_run(run, cloud_df, project, artifact_name, table_key)
+            table_update(run, cloud_df, artifact_name, table_key)
             return table_add_row(run, row_dict, project, artifact_name, table_key)
             # cloud_table = run.use_artifact(f"{artifact_name}:latest").get(table_key)
 
@@ -97,15 +97,7 @@ def table_add_row(run, row_dict: dict, project: str, artifact_name: str, table_k
     run.log_artifact(table_artifact)
 
 
-def table_update(new_df: pd.DataFrame, project: str, artifact_name: str, table_key: str):
-    with wandb.init(project=project) as run:
-        my_table = wandb.Table(dataframe=new_df)
-        table_artifact = wandb.Artifact(artifact_name, type="table")
-        table_artifact.add(my_table, table_key)
-        run.log_artifact(table_artifact)
-
-
-def table_update_run(run, new_df: pd.DataFrame, project: str, artifact_name: str, table_key: str):
+def table_update(run, new_df: pd.DataFrame, artifact_name: str, table_key: str):
     my_table = wandb.Table(dataframe=new_df)
     table_artifact = wandb.Artifact(artifact_name, type="table")
     table_artifact.add(my_table, table_key)
@@ -121,7 +113,7 @@ def cloud_retrieve_preset(preset_name: str) -> Any:
     - Easy integration to live / dry run
     (Download preset artifact -> insert big file -> Reroute big file in strategy.py)
     """
-    with wandb.init(project=constants.PROJECT_NAME_PRESETS, job_type="load-data") as run:
+    with wandb.init(project=constants.PROJECT_NAME_PRESETS, job_type="load-data", name=f"retrieve_preset_{preset_name}") as run:
         dataset = run.use_artifact(f"{preset_name}:latest")
         directory = dataset.download()
         return os.path.join(directory, os.listdir(directory)[0])
@@ -143,7 +135,7 @@ def cloud_get_presets_df(from_run_history: bool = False) -> DataFrame:
 
 def add_single_asset(path, project, asset_name):
     """Used in: Training code"""
-    with wandb.init(project=project) as run:
+    with wandb.init(project=project, name=f"add_artifact_{asset_name}") as run:
         artifact = wandb.Artifact(asset_name, type="single")
         artifact.add_file(path, name=asset_name)
         run.log_artifact(artifact)
@@ -151,19 +143,21 @@ def add_single_asset(path, project, asset_name):
 
 def load_pickle_asset(project, asset_name, version: Union[int, str] = "latest"):
     """Used in: Strategy and ftrunner"""
-    msg = f"Load version '{version}' of pickle asset for project: '{project}' - asset_name: '{asset_name}'"
+    msg = f"Load pickle asset version '{version}' of project: '{project}' - asset_name: '{asset_name}'."
     logger.warning(msg)
-    with wandb.init(project=project) as run:
+    
+    if version == "latest":
+        logger.warning("WARNING: You are using the LATEST version of pickle asset!")
+    
+    with wandb.init(project=project, name=f"retrieve_pickle_{asset_name}:{version}") as run:
         artifact = run.use_artifact(f"{asset_name}:{version}")
         path = Path.cwd() / artifact.download()
         
-        for filename in os.listdir(path)[0]:
-            if not filename.endswith("pkl"):
-                continue
-            with (path / filename).open("rb") as f:
+        for fpath in path.glob("*.pkl"):
+            with fpath.open("rb") as f:
                 return dill.load(f)
-    
-    raise FileNotFoundError(f"No '.pkl' file in '{path}''.")
+        
+        raise FileNotFoundError(f"No '.pkl' file in '{path}''. Files: '{list(path.glob('*'))}'")
 
 
 def load_lightning_container(project, asset_name, version: Union[int, str]) -> LightningContainer:
@@ -175,7 +169,7 @@ def load_lightning_container(project, asset_name, version: Union[int, str]) -> L
     if version == "latest":
         logger.warning("WARNING: You are using the LATEST version of LightningContainer asset!")
     
-    with wandb.init(project=project) as run:
+    with wandb.init(project=project, name=f"retrieve_lightning_{asset_name}:{version}") as run:
         artifact = run.use_artifact(f"{asset_name}:{version}")
         path = Path.cwd() / artifact.download()
         
@@ -185,7 +179,7 @@ def load_lightning_container(project, asset_name, version: Union[int, str]) -> L
                 if not isinstance(container, LightningContainer):
                     raise Exception("Not a LightningContainer.")
                 return container
-        print(list(path.glob("*")))
+        
         raise FileNotFoundError(f"No '.pkl' file in '{path}''.")
 
 

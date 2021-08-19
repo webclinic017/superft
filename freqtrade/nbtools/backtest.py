@@ -55,16 +55,17 @@ class DataLoader:
 
     @log_execute_time("Load BT Data")
     def load_data(self, 
-                     datadir: Path,
-                     timeframe: str,
-                     pairs: List[str], *,
-                     timerange: Optional[TimeRange] = None,
-                     fill_up_missing: bool = True,
-                     startup_candles: int = 0,
-                     fail_without_data: bool = False,
-                     data_format: str = 'json'
-                     ) -> Any:
+                datadir: Path,
+                timeframe: str,
+                pairs: List[str], *,
+                timerange: Optional[TimeRange] = None,
+                fill_up_missing: bool = True,
+                startup_candles: int = 0,
+                fail_without_data: bool = False,
+                data_format: str = 'json'
+                ) -> Any:
         
+        startup_candles = 1000
         _locals = deepcopy(locals())
         
         if timerange is not None:
@@ -316,7 +317,6 @@ def backtest(preset: BasePreset,
     return stats, summary
 
 
-@log_execute_time("Log Preset")
 def log_preset(preset: BasePreset, strategy_code: str, stats: dict, config_backtesting: dict, config_optimize: dict):
     """ Upload preset to cloud WandB. """
     logger.info("Logging preset...")
@@ -371,7 +371,7 @@ def log_preset(preset: BasePreset, strategy_code: str, stats: dict, config_backt
 
 @run_in_thread
 def wandb_log(preset_name: str, metadata: dict):
-    with wandb.init(project=constants.PROJECT_NAME_PRESETS) as run:
+    with wandb.init(project=constants.PROJECT_NAME_PRESETS, name=f"log_{preset_name}") as run:
         preset_log(run, f"./.temp/{preset_name}", preset_name)
         table_add_row(
             run,
@@ -381,9 +381,9 @@ def wandb_log(preset_name: str, metadata: dict):
             constants.PRESETS_TABLEKEY_METADATA,
         )
     logger.info("===============================")
-    logger.info("|                             |")
-    logger.info("|  WANDB LOG PRESET FINISHED  |")
-    logger.info("|                             |")
+    logger.info(f"|  '{preset_name}'")
+    logger.info("|  WANDB LOG PRESET FINISHED  ")
+    logger.info("|                             ")
     logger.info("===============================")
     
 

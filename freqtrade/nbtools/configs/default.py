@@ -10,7 +10,7 @@ DEFAULT = {
     "sell_profit_only": False,
     "sell_profit_offset": 0.0,
     "cancel_open_orders_on_exit": True,
-    "ignore_roi_if_buy_signal": False,
+    "ignore_roi_if_buy_signal": True,
     "unfilledtimeout": {"buy": 30, "sell": 30},
     "bid_strategy": {
         "price_side": "bid",
