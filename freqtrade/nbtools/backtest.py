@@ -33,7 +33,7 @@ from freqtrade.nbtools import constants
 from freqtrade.constants import DATETIME_PRINT_FORMAT
 
 
-from .helper import Capturing, get_class_from_string, parse_function_body, get_readable_date, log_execute_time
+from .helper import Capturing, get_class_from_string, parse_function_body, get_readable_date, log_execute_time, run_in_thread
 from .preset import BasePreset, ConfigPreset, LocalPreset, CloudPreset
 from .configuration import setup_optimize_configuration
 from .remote_utils import cloud_retrieve_preset, preset_log, table_add_row
@@ -310,6 +310,7 @@ def backtest(preset: BasePreset,
     backtester = NbBacktesting(config_optimize)
     stats, summary = backtester.start_nb_backtesting(parsed_strategy_code, clsname, dataloader)
     
+    
     log_preset(preset, parsed_strategy_code, stats, config_backtesting, config_optimize)
     
     return stats, summary
@@ -348,24 +349,13 @@ def log_preset(preset: BasePreset, strategy_code: str, stats: dict, config_backt
                 continue
             if isinstance(content, str):
                 f.write(content)
-     
-    with wandb.init(project=constants.PROJECT_NAME_PRESETS) as run:
-        # wandb log artifact TODO: log artifact and add row in one go
-        preset_log(run, f"./.temp/{preset_name}", preset_name)
-        # wandb add row
-        table_add_row(
-            run,
-            metadata,
-            constants.PROJECT_NAME_PRESETS,
-            constants.PRESETS_ARTIFACT_METADATA,
-            constants.PRESETS_TABLEKEY_METADATA,
-        )
 
-    # (if use local preset) update local results
+    wandb_log(preset_name, metadata)
+
     if isinstance(preset, LocalPreset):
-        print(f"You are backtesting a local preset `{preset.path_local_preset}`")
-        print("This will update backtest results (such as metadata.json, exports)")
-        print("Updating strategy via function will not update the strategy file")
+        logger.info(f"You are backtesting a local preset `{preset.path_local_preset}`")
+        logger.info("This will update backtest results (such as metadata.json, exports)")
+        logger.info("Updating strategy via function will not update the strategy file")
         # local metadata
         with (preset.path_local_preset / "metadata.json").open("w") as fs:
             json.dump(metadata, fs, default=str, indent=4)
@@ -373,9 +363,29 @@ def log_preset(preset: BasePreset, strategy_code: str, stats: dict, config_backt
         with (preset.path_local_preset / "exports" / "stats.json").open("w") as fs:
             json.dump(stats, fs, default=str, indent=4)
 
-    print("\n[BACKTEST FINISHED]")
-    print(f"Synced preset with name: {preset_name}")
-    print(f"with random name: {metadata['random_name']}\n")
+    logger.info("[LOG PRESET OFFLINE SUCCESS]")
+    logger.info(f"Sync preset with name: {preset_name}")
+    logger.info(f"with random name: {metadata['random_name']}")
+    logger.info("[WANDB LOG PRESET CONTINUES IN BACKGROUND]")
+
+
+@run_in_thread
+def wandb_log(preset_name: str, metadata: dict):
+    with wandb.init(project=constants.PROJECT_NAME_PRESETS) as run:
+        preset_log(run, f"./.temp/{preset_name}", preset_name)
+        table_add_row(
+            run,
+            metadata,
+            constants.PROJECT_NAME_PRESETS,
+            constants.PRESETS_ARTIFACT_METADATA,
+            constants.PRESETS_TABLEKEY_METADATA,
+        )
+    logger.info("===============================")
+    logger.info("|                             |")
+    logger.info("|  WANDB LOG PRESET FINISHED  |")
+    logger.info("|                             |")
+    logger.info("===============================")
+    
 
 
 def generate_metadata(

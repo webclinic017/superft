@@ -13,6 +13,7 @@ import arrow
 import logging
 import time
 import gc
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -88,3 +89,11 @@ def log_execute_time(name: str = None):
 def free_mem(var):
     del var
     gc.collect()
+    
+    
+def run_in_thread(func):
+    def wrapper(*args, **kwargs):
+        thread = threading.Thread(target=func, args=args, kwargs=kwargs)
+        thread.start()
+        return thread
+    return wrapper

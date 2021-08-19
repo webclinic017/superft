@@ -1,29 +1,9 @@
-# from pathlib import Path
-# import pandas as pd
-
-# from freqtrade.ml.loader import load_df
-# from __play2__ import *
+import threading
 
 
-# path_data = Path.cwd().parent / "mount" / "data" / "binance"
-# btc_usdt = load_df(path_data / "BTC_USDT-5m.json", "5m").loc[-5000:]
-
-
-# btc_usdt = macd_strategy(btc_usdt)
-
-
-# print(btc_usdt)
-
-class Foo:
-    
-    def __init__(self) -> None:
-        self.beer = "baar"
-        self.buidl = "bor"
-    
-    def bar(self):
-        pass
-    
-    
-c = Foo()
-
-print(c.__dict__)
+def decorator_run_in_thread(func):
+    def wrapper(*args, **kwargs):
+        thread = threading.Thread(target=func, args=args, kwargs=kwargs)
+        thread.start()
+        return thread
+    return wrapper

@@ -54,7 +54,7 @@ def table_retrieve(project: str, artifact_name: str, table_key: str) -> pd.DataF
 
 
 def table_add_row(run, row_dict: dict, project: str, artifact_name: str, table_key: str):
-    logger.info("Adding new row to table...")
+    logger.debug("Adding new row to table...")
     
     cloud_table = run.use_artifact(f"{artifact_name}:latest").get(table_key)
     cloud_df = pd.DataFrame(cloud_table.data, columns=cloud_table.columns)
@@ -68,12 +68,12 @@ def table_add_row(run, row_dict: dict, project: str, artifact_name: str, table_k
         added_cols = list(set(input_cols) - set(real_cols))
         removed_cols = list(set(real_cols) - set(input_cols))
 
-        logger.warning("Columns are not identical.")
-        logger.warning("New columns    : %s" % added_cols)
-        logger.warning("Removed columns: %s" % removed_cols)
+        logger.debug("Columns are not identical.")
+        logger.debug("New columns    : %s" % added_cols)
+        logger.debug("Removed columns: %s" % removed_cols)
 
         if len(added_cols) > 0:
-            logger.warning("Create newly added columns, leaving older data values to its column: 'None'")
+            logger.debug("Create newly added columns, leaving older data values to its column: 'None'")
 
             for col in added_cols:
                 cloud_df[col] = None
@@ -83,7 +83,7 @@ def table_add_row(run, row_dict: dict, project: str, artifact_name: str, table_k
             # cloud_table = run.use_artifact(f"{artifact_name}:latest").get(table_key)
 
         if len(removed_cols) > 0:
-            logger.warning("Inserting 'None' to removed columns")
+            logger.debug("Inserting 'None' to removed columns")
 
             for col in removed_cols:
                 row_dict[col] = None
