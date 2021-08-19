@@ -5,15 +5,21 @@ import rapidjson
 import pandas as pd
 import random
 import wandb
+import attr
+import gc
 
-from functools import wraps
+from functools import wraps, cache
 from copy import deepcopy
-from typing import Any, Dict, List, Tuple, Union, Callable
+from typing import Any, Dict, List, Tuple, Union, Callable, Optional, Deque
+from pandas import DataFrame
+from pathlib import Path
+from collections import deque
 
-from freqtrade.configuration import remove_credentials, validate_config_consistency
+from freqtrade.configuration import remove_credentials, validate_config_consistency, TimeRange
 from freqtrade.data.dataprovider import DataProvider
+from freqtrade.data import history
 from freqtrade.exceptions import OperationalException
-from freqtrade.exchange.exchange import timeframe_to_minutes
+from freqtrade.exchange.exchange import timeframe_to_minutes, timeframe_to_seconds
 from freqtrade.mixins import LoggingMixin
 from freqtrade.optimize.backtesting import Backtesting
 from freqtrade.optimize.optimize_reports import generate_backtest_stats, show_backtest_results
@@ -24,6 +30,8 @@ from freqtrade.resolvers.strategy_resolver import StrategyResolver
 from freqtrade.strategy.interface import IStrategy
 from freqtrade.wallets import Wallets
 from freqtrade.nbtools import constants
+from freqtrade.constants import DATETIME_PRINT_FORMAT
+
 
 from .helper import Capturing, get_class_from_string, parse_function_body, get_readable_date, log_execute_time
 from .preset import BasePreset, ConfigPreset, LocalPreset, CloudPreset
@@ -34,7 +42,62 @@ from .remote_utils import cloud_retrieve_preset, preset_log, table_add_row
 logger = logging.getLogger(__name__)
 
 
+@attr.s
+class DataLoader:
+    """ Instantiate this on the top of notebook. This will save time freqtrade from
+        loading the same 'n' datasets. To remove cached datasets, call `instance.clear()`
+    """
+    max_n_datasets: int = attr.ib(default=5)
+    
+    def __attrs_post_init__(self):
+        self._loaded_datasets: Deque[Dict[int, Any]] = deque(maxlen=self.max_n_datasets)
+        logger.info(f"Initialized DataLoader with {self.max_n_datasets} max datas.")
+
+    @log_execute_time("Load BT Data")
+    def load_data(self, 
+                     datadir: Path,
+                     timeframe: str,
+                     pairs: List[str], *,
+                     timerange: Optional[TimeRange] = None,
+                     fill_up_missing: bool = True,
+                     startup_candles: int = 0,
+                     fail_without_data: bool = False,
+                     data_format: str = 'json'
+                     ) -> Any:
+        
+        _locals = deepcopy(locals())
+        
+        if timerange is not None:
+            _locals["timerange"] = timerange.__dict__
+        
+        hashed = hash(str(_locals))
+        old_hashes = [list(it.keys())[0] for it in self._loaded_datasets]
+        
+        if hashed in old_hashes:
+            logger.info(f"DATALOADER: Dataset with hash `{hashed}` exists in cache!")
+            return self._loaded_datasets[old_hashes.index(hashed)][hashed]
+        
+        logger.info(f"DATALOADER: Dataset with hash `{hashed}` doesn't exist. Loading from disk...")
+        data = history.load_data(
+            datadir=datadir,
+            pairs=pairs,
+            timeframe=timeframe,
+            timerange=timerange,
+            fill_up_missing=fill_up_missing,
+            startup_candles=startup_candles,
+            fail_without_data=fail_without_data,
+            data_format=data_format
+        )
+        self._loaded_datasets.append({hashed: data})
+        return data
+
+    def clear(self):
+        self._loaded_datasets.clear()
+        gc.collect()
+
+
 class NbBacktesting(Backtesting):
+    
     def __init__(self, config: Dict[str, Any]) -> None:
 
         LoggingMixin.show_output = False
@@ -47,7 +110,7 @@ class NbBacktesting(Backtesting):
 
     
     @log_execute_time("Backtest")
-    def start_nb_backtesting(self, parsed_strategy_code: str, clsname: str) -> Tuple[dict, str]:
+    def start_nb_backtesting(self, parsed_strategy_code: str, clsname: str, dataloader: DataLoader) -> Tuple[dict, str]:
         """
         Run backtesting end-to-end
         :return: None
@@ -106,7 +169,7 @@ class NbBacktesting(Backtesting):
 
         data: Dict[str, Any] = {}
 
-        data, timerange = self.load_bt_data()
+        data, timerange = self.dataloader_load_bt_data(dataloader)
         logger.info("Dataload complete. Calculating indicators")
 
         for strat in self.strategylist:
@@ -120,6 +183,37 @@ class NbBacktesting(Backtesting):
                 show_backtest_results(self.config, stats)
 
         return (stats, "\n".join(print_text))
+
+    def dataloader_load_bt_data(self, dataloader: DataLoader) -> Tuple[Dict[str, DataFrame], TimeRange]:
+        """
+        Loads backtest data and returns the data combined with the timerange
+        as tuple.
+        Modified: Cache loaded data
+        """
+        timerange = TimeRange.parse_timerange(None if self.config.get(
+            'timerange') is None else str(self.config.get('timerange')))
+
+        data = dataloader.load_data(
+            datadir=self.config['datadir'],
+            pairs=self.pairlists.whitelist,
+            timeframe=self.timeframe,
+            timerange=timerange,
+            startup_candles=self.required_startup,
+            fail_without_data=True,
+            data_format=self.config.get('dataformat_ohlcv', 'json'),
+        )
+
+        min_date, max_date = history.get_timerange(data)
+
+        logger.info(f'Loading data from {min_date.strftime(DATETIME_PRINT_FORMAT)} '
+                    f'up to {max_date.strftime(DATETIME_PRINT_FORMAT)} '
+                    f'({(max_date - min_date).days} days).')
+
+        # Adjust startts forward if not enough data is available
+        timerange.adjust_start_if_necessary(timeframe_to_seconds(self.timeframe),
+                                            self.required_startup, min_date)
+
+        return data, timerange
 
 
 def process_strategy(strategy: IStrategy, config: Dict[str, Any] = None) -> IStrategy:
@@ -190,7 +284,11 @@ def process_strategy(strategy: IStrategy, config: Dict[str, Any] = None) -> IStr
 
 
 @log_execute_time("Whole Backtesting Process (Backtest + Log)")
-def backtest(preset: BasePreset, strategy: Union[str, Callable[[], None]], clsname: str = "NotebookStrategy"):
+def backtest(preset: BasePreset, 
+             strategy: Union[str, Callable[[], None]], 
+             clsname: str = "NotebookStrategy",
+             dataloader: Optional[DataLoader] = None,
+             ):
     """ Start freqtrade backtesting. Callable in notebook.
         preset: Any kind of Preset (ConfigPreset, LocalPreset, CloudPreset)
         strategy: str or function that has strategy code
@@ -204,8 +302,13 @@ def backtest(preset: BasePreset, strategy: Union[str, Callable[[], None]], clsna
     else:
         raise ValueError("Strategy must instance of Callable or plain String (from strategy code)")
     
+    if dataloader is None:
+        logger.warning(("WARNING: You are not using DataLoader." \
+                       "Expect slow process when freqtrade loads the same BT data."))
+        dataloader = DataLoader(max_n_datasets=0)
+    
     backtester = NbBacktesting(config_optimize)
-    stats, summary = backtester.start_nb_backtesting(parsed_strategy_code, clsname)
+    stats, summary = backtester.start_nb_backtesting(parsed_strategy_code, clsname, dataloader)
     
     log_preset(preset, parsed_strategy_code, stats, config_backtesting, config_optimize)
     

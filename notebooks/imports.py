@@ -41,7 +41,7 @@ from freqtrade.ml.trainer import TradingTrainer
 from freqtrade.ml.container import LightningContainer
 from freqtrade.ml import loader, lightning_utils
 from freqtrade.nbtools.preset import LocalPreset, ConfigPreset, FilePreset, CloudPreset
-from freqtrade.nbtools.backtest import backtest
+from freqtrade.nbtools.backtest import backtest, DataLoader
 from freqtrade.nbtools import plotting, configs
 from freqtrade.nbtools.helper import free_mem
 from freqtrade.nbtools.pairs import PAIRS_HIGHCAP_NONSTABLE
@@ -50,6 +50,7 @@ from freqtrade.nbtools.pairs import PAIRS_HIGHCAP_NONSTABLE
 PATH_MOUNT = Path.cwd().parent / "mount"
 PATH_DATA = PATH_MOUNT / "data"
 PATH_PRESETS = PATH_MOUNT / "presets"
+DATALOADER = DataLoader(max_n_datasets=5)
 
 # Define custom functions
 def foo() -> str:

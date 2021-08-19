@@ -36,6 +36,7 @@ class BasePreset(ABC):
     max_open_trades: Optional[int] = attr.ib(init=False)
     fee: Optional[float] = attr.ib(init=False)
     strategy_search_path: Optional[Path] = attr.ib(init=False)
+    timeframe: Optional[str] = attr.ib(init=False)
 
     def __attrs_pre_init__(self):
         setattr(self, "pairs", None)
@@ -45,6 +46,7 @@ class BasePreset(ABC):
         setattr(self, "max_open_trades", None)
         setattr(self, "fee", None)
         setattr(self, "strategy_search_path", None)
+        setattr(self, "timeframe", None)
 
     def get_config_optimize(self, config_backtesting: dict) -> dict:
         """ Overwrite config_backtesting (if any overwrites) then get the configuration 
@@ -82,6 +84,15 @@ class BasePreset(ABC):
             logger.info(f"Add strategy search path {self.strategy_search_path}")
             config_backtesting.update({"strategy_path": self.strategy_search_path})
 
+        if self.timeframe is not None:
+            logger.info(
+                f"Overwriting timeframe from {config_backtesting.get('timeframe', None)} to {self.timeframe}"
+            )
+            logger.warning(
+                f"WARNING: Overwriting timeframe means overwrite strategy's original timeframe!"
+            )
+            config_backtesting.update({"timeframe": self.fee})
+
         args = {
             "datadir": self.path_data / config_backtesting["exchange"]["name"],
             "timerange": self.timerange,
@@ -93,13 +104,15 @@ class BasePreset(ABC):
         return setup_optimize_configuration(config_backtesting, args, RunMode.BACKTEST)
 
     def overwrite_config(self, 
+                         *,
                          pairs: Optional[List[str]] = None,
                          exchange: Optional[str] = None,
                          starting_balance: Optional[float] = None,
                          stake_amount: Optional[float] = None,
                          max_open_trades: Optional[int] = None,
                          fee: Optional[float] = None,
-                         strategy_search_path: Optional[Path] = None
+                         strategy_search_path: Optional[Path] = None,
+                         timeframe: Optional[str] = None,
                          ):
         # Loop through this function args, set key if not None
         for key, value in locals().items():
