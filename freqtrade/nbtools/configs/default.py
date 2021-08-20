@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 DEFAULT = {
     "stake_currency": "USDT",
     "fiat_display_currency": "USD",
@@ -11,15 +13,7 @@ DEFAULT = {
     "sell_profit_offset": 0.0,
     "cancel_open_orders_on_exit": True,
     "ignore_roi_if_buy_signal": True,
-    "unfilledtimeout": {"buy": 30, "sell": 30},
-    "bid_strategy": {
-        "price_side": "bid",
-        "ask_last_balance": 0.0,
-        "use_order_book": True,
-        "order_book_top": 1,
-        "check_depth_of_market": {"enabled": False, "bids_to_ask_delta": 1},
-    },
-    "ask_strategy": {"price_side": "ask", "use_order_book": True, "order_book_top": 1},
+    "unfilledtimeout": {"buy": 120, "sell": 30},
     "order_types": {
         "buy": "limit",
         "sell": "limit",
@@ -29,6 +23,14 @@ DEFAULT = {
         "stoploss_on_exchange": False,
         "stoploss_on_exchange_interval": 60,
     },
+    "bid_strategy": {
+        "price_side": "bid",
+        "ask_last_balance": 0.0,
+        "use_order_book": True,
+        "order_book_top": 1,
+        "check_depth_of_market": {"enabled": False, "bids_to_ask_delta": 1},
+    },
+    "ask_strategy": {"price_side": "ask", "use_order_book": True, "order_book_top": 1},
     "exchange": {
         "name": "binance",
         "key": "your_exchange_key",
@@ -80,3 +82,7 @@ DEFAULT = {
     "forcebuy_enable": False,
     "internals": {"process_throttle_secs": 5},
 }
+
+DEFAULT_BUYMARKET = deepcopy(DEFAULT)
+DEFAULT_BUYMARKET["order_types"]["buy"] = "market"
+DEFAULT_BUYMARKET["bid_strategy"]["price_side"] = "ask"

@@ -1,6 +1,6 @@
 from pathlib import Path
 from matplotlib import dates
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -29,7 +29,7 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     end_ts = pd.Timestamp(end, tz="UTC")
     if end_ts > trades["close_date"].max():
         end_ts = trades["close_date"].max()
-
+        
     # Plot style
     grid_color = "black"
     grid_alpha = 0.1
@@ -60,6 +60,13 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     ax2.xaxis.set_major_locator(dates.MonthLocator(interval=1))
     ax2.xaxis.set_minor_formatter(dates.DateFormatter("%d"))
     ax2.xaxis.set_minor_locator(dates.AutoDateLocator())
+    
+    if (end_ts - start_ts) > timedelta(days=365):
+        ax2.xaxis.set_major_formatter(dates.DateFormatter("%Y"))
+        ax2.xaxis.set_major_locator(dates.YearLocator())
+        ax2.xaxis.set_minor_formatter(dates.DateFormatter("%b"))
+        ax2.xaxis.set_minor_locator(dates.AutoDateLocator())
+        
     ax2.grid(b=True, which="both", color=grid_color, linestyle="-", axis="both", alpha=grid_alpha)
 
     plt.title("BTC/USDT (orange), Returns in $ (green)")
@@ -101,18 +108,21 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     return df   
 
 
-def plot_profits_timerange(trades_data: pd.DataFrame, timerange: str, path_mount: Path):
+def plot_profits_timerange(trades_data: pd.DataFrame, timerange: str, path_mount: Path, name: str = "plot"):
+    if "-" not in timerange:
+        raise ValueError("Please follow freqtrade's timerange format. Example: `20210101-20220201` or `20210101-`")
+    
     start_stop = timerange.split("-")
     
-    if len(start_stop) == 1:
+    if len(start_stop[1]) == 0:
         start = parse_dtstring(start_stop[0])
         stop = "2022-12-30"
-    elif len(start_stop) == 2:
+    elif len(start_stop[1]) > 0:
         start, stop = parse_dtstring(start_stop[0]), parse_dtstring(start_stop[1])
     else:
         raise ValueError(f"Unknown timerange: '{timerange}' ")
     
-    return plot_profits(trades_data, start, stop, path_mount)
+    return plot_profits(trades_data, start, stop, path_mount, name=name)
 
 
 def save_plot():

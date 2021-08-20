@@ -1,5 +1,10 @@
-import wandb
+import pandas as pd
 
 
-with wandb.init(project="test", name="MyRunName1") as run:
-    print("Hello")
+df = pd.DataFrame({
+    "a": [1,2,3],
+    "b": [3,2,1],
+})
+
+for i in df.itertuples():
+    print(i.a)

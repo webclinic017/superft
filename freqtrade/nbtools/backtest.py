@@ -383,7 +383,6 @@ def wandb_log(preset_name: str, metadata: dict):
     logger.info("===============================")
     logger.info(f"|  '{preset_name}'")
     logger.info("|  WANDB LOG PRESET FINISHED  ")
-    logger.info("|                             ")
     logger.info("===============================")
     
 
@@ -450,7 +449,12 @@ def generate_metadata(
             if len(trades_summary[key]) > 30:
                 del trades_summary[key]
 
-    return {**metadata, **trades_summary}
+    data = {**metadata, **trades_summary}
+    
+    if data["stake_amount"] == "unlimited":
+        data["stake_amount"] = -1
+    
+    return data
 
 
 def get_random_name() -> str:

@@ -54,6 +54,10 @@ class BasePreset(ABC):
         """
         logger.info(f"Setting config for {self.name} ...")
         
+        if config_backtesting["stake_amount"] < 0:
+            logger.info("Detected stake amount of negative amount. Setting to `unlimited`")
+            config_backtesting["stake_amount"] = "unlimited"
+        
         if self.pairs is not None:
             logger.info(
                 f"Overwriting pairs (from {len(config_backtesting['exchange']['pair_whitelist'])} to {len(self.pairs)} pairs)"
@@ -65,7 +69,7 @@ class BasePreset(ABC):
             config_backtesting["exchange"]["name"] = self.exchange
         
         if self.starting_balance is not None:
-            logger.info(f"Overwriting starting balance from {config_backtesting['dry_run_wallet']} to {self.starting_balance}")
+            logger.info(f"Overwriting starting balance from {config_backtesting.get('dry_run_wallet', None)} to {self.starting_balance}")
             config_backtesting.update({"dry_run_wallet": self.starting_balance})
         
         if self.stake_amount is not None:
@@ -77,7 +81,7 @@ class BasePreset(ABC):
             config_backtesting.update({"max_open_trades": self.max_open_trades})
         
         if self.fee is not None:
-            logger.info(f"Overwriting max open trades from {config_backtesting['fee']} to {self.fee}")
+            logger.info(f"Overwriting max open trades from {config_backtesting.get('fee', None)} to {self.fee}")
             config_backtesting.update({"fee": self.fee})
 
         if self.strategy_search_path is not None:
@@ -91,7 +95,7 @@ class BasePreset(ABC):
             logger.warning(
                 f"WARNING: Overwriting timeframe means overwrite strategy's original timeframe!"
             )
-            config_backtesting.update({"timeframe": self.fee})
+            config_backtesting.update({"timeframe": self.timeframe})
 
         args = {
             "datadir": self.path_data / config_backtesting["exchange"]["name"],
