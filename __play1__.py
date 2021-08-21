@@ -1,10 +1,17 @@
-import pandas as pd
+import ast
+from typing import List
 
 
-df = pd.DataFrame({
-    "a": [1,2,3],
-    "b": [3,2,1],
-})
+string = """
+class MyClass:
+    def __init__(self):
+        pass
+"""
 
-for i in df.itertuples():
-    print(i.a)
+
+def get_classes_in_python_string(string: str) -> List[str]:
+    tree = ast.parse(string)
+    return [node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
+
+
+print(get_classes_in_python_string(string))

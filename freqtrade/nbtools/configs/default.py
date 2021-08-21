@@ -43,8 +43,8 @@ DEFAULT = {
         "pair_blacklist": [
             "BNB/USDT", 
             "BNB/BUSD", 
-            "BTC/USDT", 
-            "BTC/BUSD"
+            "BNB/USDC",
+            "DAI/BNB",
         ],
     },
     "pairlists": [{"method": "StaticPairList"}],
