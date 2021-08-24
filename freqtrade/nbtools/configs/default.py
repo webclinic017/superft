@@ -13,7 +13,7 @@ DEFAULT = {
     "sell_profit_offset": 0.0,
     "cancel_open_orders_on_exit": True,
     "ignore_roi_if_buy_signal": True,
-    "unfilledtimeout": {"buy": 120, "sell": 30},
+    "unfilledtimeout": {"buy": 300, "sell": 60, "unit": "seconds"},
     "order_types": {
         "buy": "limit",
         "sell": "limit",
@@ -66,6 +66,12 @@ DEFAULT = {
         "enabled": False,
         "token": "your_telegram_token",
         "chat_id": "your_telegram_chat_id",
+        "keyboard": [   
+            ["/daily", "/stats", "/balance", "/profit"],
+            ["/status table", "/performance", "/balance"],
+            ["/show_config", "/trades 10", "/count"],
+            ["/start", "/stop", "/logs"],
+        ],
     },
     "api_server": {
         "enabled": False,
@@ -80,9 +86,41 @@ DEFAULT = {
     "bot_name": "freqtrade",
     "initial_state": "running",
     "forcebuy_enable": False,
-    "internals": {"process_throttle_secs": 5},
+    "internals": { "process_throttle_secs": 30 },
 }
 
 DEFAULT_BUYMARKET = deepcopy(DEFAULT)
 DEFAULT_BUYMARKET["order_types"]["buy"] = "market"
 DEFAULT_BUYMARKET["bid_strategy"]["price_side"] = "ask"
+
+DEFAULT_BUYMARKET_CUSTOMPAIRLIST = deepcopy(DEFAULT_BUYMARKET)
+DEFAULT_BUYMARKET_CUSTOMPAIRLIST["pairlists"] = [
+    {
+        "method": "VolumePairList",
+        "number_assets": 100,
+        "sort_key": "quoteVolume",
+        "refresh_period": 900
+    },
+    {"method": "AgeFilter", "min_days_listed": 7},
+    {"method": "SpreadFilter", "max_spread_ratio": 0.005},
+    {"method": "PriceFilter", "low_price_ratio": 0.002},
+    {
+        "method": "RangeStabilityFilter",
+        "lookback_days": 3,
+        "min_rate_of_change": 0.1,
+        "refresh_period": 1800
+    },
+    {
+        "method": "VolatilityFilter",
+        "lookback_days": 3,
+        "min_volatility": 0.0,
+        "max_volatility": 0.75,
+        "refresh_period": 1800
+    },
+    {
+        "method": "VolumePairList",
+        "number_assets": 80,
+        "sort_key": "quoteVolume",
+        "refresh_period": 900
+    },
+]

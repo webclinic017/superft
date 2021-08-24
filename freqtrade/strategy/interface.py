@@ -730,8 +730,17 @@ class IStrategy(ABC, HyperStrategyMixin):
         Has positive effects on memory usage for whatever reason - also when
         using only one strategy.
         """
-        return {pair: self.advise_indicators(pair_data.copy(), {'pair': pair})
-                for pair, pair_data in data.items()}
+        try:
+            from tqdm import tqdm_notebook
+            shell = get_ipython().__class__.__name__
+            if shell == 'ZMQInteractiveShell':
+                returns = {}
+                for pair, pair_data in tqdm_notebook(data.items(), desc="Populating Indicators"):
+                    returns[pair] = self.advise_indicators(pair_data.copy(), {'pair': pair})
+                return returns
+        except:
+            return {pair: self.advise_indicators(pair_data.copy(), {'pair': pair})
+                    for pair, pair_data in data.items()}
 
     def advise_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         """

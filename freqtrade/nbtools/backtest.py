@@ -13,33 +13,50 @@ from copy import deepcopy
 from typing import Any, Dict, List, Tuple, Union, Callable, Optional, Deque
 from pandas import DataFrame
 from pathlib import Path
-from collections import deque
+from collections import deque, defaultdict
+from datetime import datetime, timedelta
+from tqdm import tqdm_notebook
+# from distributed import Client
+# os.environ["MODIN_ENGINE"] = "dask"
+# client = Client(n_workers=6)
+# import modin.pandas as mpd
 
 from freqtrade.configuration import remove_credentials, validate_config_consistency, TimeRange
 from freqtrade.data.dataprovider import DataProvider
 from freqtrade.data import history
+from freqtrade.data.btanalysis import trade_list_to_dataframe
 from freqtrade.exceptions import OperationalException
 from freqtrade.exchange.exchange import timeframe_to_minutes, timeframe_to_seconds
 from freqtrade.mixins import LoggingMixin
 from freqtrade.optimize.backtesting import Backtesting
 from freqtrade.optimize.optimize_reports import generate_backtest_stats, show_backtest_results
-from freqtrade.persistence import PairLocks, Trade
+from freqtrade.persistence import PairLocks, Trade, LocalTrade
 from freqtrade.plugins.pairlistmanager import PairListManager
 from freqtrade.resolvers.exchange_resolver import ExchangeResolver
 from freqtrade.resolvers.strategy_resolver import StrategyResolver
 from freqtrade.strategy.interface import IStrategy
 from freqtrade.wallets import Wallets
-from freqtrade.nbtools import constants
 from freqtrade.constants import DATETIME_PRINT_FORMAT
 
-
-from .helper import Capturing, get_class_from_string, parse_function_body, get_readable_date, log_execute_time, run_in_thread
-from .preset import BasePreset, ConfigPreset, LocalPreset, CloudPreset
-from .configuration import setup_optimize_configuration
-from .remote_utils import cloud_retrieve_preset, preset_log, table_add_row
+from freqtrade.nbtools.helper import (
+    Capturing, get_class_from_string, parse_function_body, get_readable_date, log_execute_time, run_in_thread
+)
+from freqtrade.nbtools.preset import BasePreset, ConfigPreset, LocalPreset, CloudPreset
+from freqtrade.nbtools.configuration import setup_optimize_configuration
+from freqtrade.nbtools.remote_utils import cloud_retrieve_preset, preset_log, table_add_row
+from freqtrade.nbtools import constants
 
 
 logger = logging.getLogger(__name__)
+
+# Indexes for backtest tuples
+DATE_IDX = 0
+BUY_IDX = 1
+OPEN_IDX = 2
+CLOSE_IDX = 3
+SELL_IDX = 4
+LOW_IDX = 5
+HIGH_IDX = 6
 
 
 @attr.s
@@ -100,7 +117,8 @@ class DataLoader:
 class NbBacktesting(Backtesting):
     
     def __init__(self, config: Dict[str, Any]) -> None:
-
+        """ Override for notebook backtesting
+        """
         LoggingMixin.show_output = False
         self.config = config
 
@@ -113,8 +131,7 @@ class NbBacktesting(Backtesting):
     @log_execute_time("Backtest")
     def start_nb_backtesting(self, parsed_strategy_code: str, clsname: str, dataloader: DataLoader) -> Tuple[dict, str]:
         """
-        Run backtesting end-to-end
-        :return: None
+        Implemented specifically for notebook backtesting.
         """
         logger.info("Backtesting...")
 
@@ -168,13 +185,28 @@ class NbBacktesting(Backtesting):
         # Get maximum required startup period
         self.required_startup = max([strat.startup_candle_count for strat in self.strategylist])
 
-        data: Dict[str, Any] = {}
-
+        data: Dict[str, DataFrame] = {}
         data, timerange = self.dataloader_load_bt_data(dataloader)
         logger.info("Dataload complete. Calculating indicators")
+        
+        # try:
+        #     # Try to use Modin when available
+        #     logger.info("Trying to use Modin DataFrame as backend") 
+        #     mdata = {key: mpd.DataFrame(value) for key, value in data.items()} 
+        #     logger.info("Modin convert finished. Backtesting...") 
+        #     for strat in self.strategylist:
+        #         min_date, max_date = self.backtest_one_strategy(strat, mdata, timerange)
+        #     logger.info("Strategy is backtested using Modin DataFrame backend") 
+        
+        # except Exception as e:
+        #     logger.warning(f"Modin Error: {e}")
+        #     logger.warning("Modin doesn't support this strategy. Using vanilla pandas...")
+        #     for strat in self.strategylist:
+        #         min_date, max_date = self.backtest_one_strategy(strat, data, timerange)
 
         for strat in self.strategylist:
             min_date, max_date = self.backtest_one_strategy(strat, data, timerange)
+
         if len(self.strategylist) > 0:
             stats = generate_backtest_stats(
                 data, self.all_results, min_date=min_date, max_date=max_date
@@ -184,6 +216,7 @@ class NbBacktesting(Backtesting):
                 show_backtest_results(self.config, stats)
 
         return (stats, "\n".join(print_text))
+    
 
     def dataloader_load_bt_data(self, dataloader: DataLoader) -> Tuple[Dict[str, DataFrame], TimeRange]:
         """
@@ -213,7 +246,7 @@ class NbBacktesting(Backtesting):
         # Adjust startts forward if not enough data is available
         timerange.adjust_start_if_necessary(timeframe_to_seconds(self.timeframe),
                                             self.required_startup, min_date)
-
+        
         return data, timerange
 
 
@@ -309,8 +342,15 @@ def backtest(preset: BasePreset,
         dataloader = DataLoader(max_n_datasets=0)
     
     backtester = NbBacktesting(config_optimize)
-    stats, summary = backtester.start_nb_backtesting(parsed_strategy_code, clsname, dataloader)
-    
+    try:
+        stats, summary = backtester.start_nb_backtesting(parsed_strategy_code, clsname, dataloader)
+    except AttributeError as e:
+        if "'PairLock' has no attribute 'query'" in str(e):
+            logger.warning(f"AttributeError: {e}")
+            logger.warning("Please backtest again.")
+            dataloader.clear()
+            return backtest(preset, strategy, clsname, dataloader)
+        raise e
     
     log_preset(preset, parsed_strategy_code, stats, config_backtesting, config_optimize)
     
@@ -384,7 +424,6 @@ def wandb_log(preset_name: str, metadata: dict):
     logger.info(f"|  '{preset_name}'")
     logger.info("|  WANDB LOG PRESET FINISHED  ")
     logger.info("===============================")
-    
 
 
 def generate_metadata(
