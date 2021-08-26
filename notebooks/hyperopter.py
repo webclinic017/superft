@@ -1,10 +1,3 @@
-# Freqtrade Workspace
-
-# Notebook Helpers
-get_ipython().run_line_magic("load_ext", " autoreload")
-get_ipython().run_line_magic("autoreload", " 2")
-get_ipython().run_line_magic("env", " WANDB_SILENT=true")
-
 # Standard Imports
 from pathlib import Path
 from typing import List, Callable, Tuple, Any
@@ -22,7 +15,10 @@ import sys
 import pandas as pd
 import numpy as np
 import qgrid
+import stackprinter
 pd.set_option('display.max_rows', 200)
+stackprinter.set_excepthook(style='darkbg2')  # for jupyter notebooks try style='lightbg'
+
 
 # Resolve CWD
 gc.collect()
@@ -75,13 +71,13 @@ pairs              = PAIRS_HIGHCAP_NONSTABLE
 
 # Hyperopt Arguments
 hyperopt_args = {
-    # spaces: all, buy, sell, roi, stoploss, trailing, default (all exc. trailing)
+    # all, buy, sell, roi, stoploss, trailing, default (all exc. trailing)
     "spaces": "buy",
-    "epochs": 100,
-    # hyperopt-loss: SharpeHyperOptLoss, SortinoHyperOptLoss, OnlyProfitHyperOptLoss, ShortTradeDurHyperOptLoss, or Sharpe/Sortino + Daily
+    "epochs": 3,
+    # SharpeHyperOptLoss, SortinoHyperOptLoss, OnlyProfitHyperOptLoss, ShortTradeDurHyperOptLoss, or Sharpe/Sortino + Daily
     "hyperopt_loss": "SharpeHyperOptLoss",
-#     "min-trades": 10,
-#     "random-state": 2,
+    "hyperopt_min_trades": 10,
+    "hyperopt_random_state": 2,
 }
 
 preset = FilePreset(
@@ -106,10 +102,4 @@ preset.overwrite_config(
 #     **hyperopt_args,
 # }
 
-start_hyperopt(preset, preset.default_strategy_code, hyperopt_args=hyperopt_args, clsname=strategy_classname)
-
-
-
-
-
-
+start_hyperopt(preset, hyperopt_args=hyperopt_args, clsname=strategy_classname)

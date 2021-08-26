@@ -36,10 +36,12 @@ from freqtrade.resolvers.exchange_resolver import ExchangeResolver
 from freqtrade.resolvers.strategy_resolver import StrategyResolver
 from freqtrade.strategy.interface import IStrategy
 from freqtrade.wallets import Wallets
+from freqtrade.enums.runmode import RunMode
 from freqtrade.constants import DATETIME_PRINT_FORMAT
 
 from freqtrade.nbtools.helper import (
-    Capturing, get_class_from_string, parse_function_body, get_readable_date, log_execute_time, run_in_thread
+    Capturing, get_class_from_string,  parse_strategy_code,
+    get_readable_date, log_execute_time, run_in_thread, get_strategy_object
 )
 from freqtrade.nbtools.preset import BasePreset, ConfigPreset, LocalPreset, CloudPreset
 from freqtrade.nbtools.configuration import setup_optimize_configuration
@@ -116,7 +118,7 @@ class DataLoader:
 
 class NbBacktesting(Backtesting):
     
-    def __init__(self, config: Dict[str, Any]) -> None:
+    def __init__(self, config: Dict[str, Any], strategies: List[IStrategy]) -> None:
         """ Override for notebook backtesting
         """
         LoggingMixin.show_output = False
@@ -124,23 +126,12 @@ class NbBacktesting(Backtesting):
 
         # Reset keys for backtesting
         remove_credentials(self.config)
-        self.strategylist: List[IStrategy] = []
+        self.strategylist: List[IStrategy] = strategies
         self.all_results: Dict[str, Dict] = {}
-
-    
-    @log_execute_time("Backtest")
-    def start_nb_backtesting(self, parsed_strategy_code: str, clsname: str, dataloader: DataLoader) -> Tuple[dict, str]:
-        """
-        Implemented specifically for notebook backtesting.
-        """
-        logger.info("Backtesting...")
-
-        strategy = get_class_from_string(parsed_strategy_code, clsname)(self.config)
-        strategy = process_strategy(strategy, self.config)
-        self.strategylist.append(strategy)
+        
         self.exchange = ExchangeResolver.load_exchange(self.config["exchange"]["name"], self.config)
         self.dataprovider = DataProvider(self.config, None)
-
+        
         # No strategy list specified, only one strategy
         validate_config_consistency(self.config)
 
@@ -151,21 +142,23 @@ class NbBacktesting(Backtesting):
             )
         self.timeframe = str(self.config.get("timeframe"))
         self.timeframe_min = timeframe_to_minutes(self.timeframe)
-
         self.pairlists = PairListManager(self.exchange, self.config)
+        
         if "VolumePairList" in self.pairlists.name_list:
             raise OperationalException("VolumePairList not allowed for backtesting.")
         if "PerformanceFilter" in self.pairlists.name_list:
             raise OperationalException("PerformanceFilter not allowed for backtesting.")
-
         if len(self.strategylist) > 1 and "PrecisionFilter" in self.pairlists.name_list:
             raise OperationalException(
                 "PrecisionFilter not allowed for backtesting multiple strategies."
             )
 
+        # Get maximum required startup period
+        self.required_startup = max([strat.startup_candle_count for strat in self.strategylist])
+    
         self.dataprovider.add_pairlisthandler(self.pairlists)
         self.pairlists.refresh_pairlist()
-
+    
         if len(self.pairlists.whitelist) == 0:
             raise OperationalException("No pair in whitelist.")
 
@@ -181,9 +174,13 @@ class NbBacktesting(Backtesting):
         PairLocks.reset_locks()
 
         self.wallets = Wallets(self.config, self.exchange, log=False)
-
-        # Get maximum required startup period
-        self.required_startup = max([strat.startup_candle_count for strat in self.strategylist])
+    
+    @log_execute_time("Backtest")
+    def start_nb_backtesting(self, dataloader: DataLoader) -> Tuple[dict, str]:
+        """
+        Implemented specifically for notebook backtesting.
+        """
+        logger.info("Backtesting...")
 
         data: Dict[str, DataFrame] = {}
         data, timerange = self.dataloader_load_bt_data(dataloader)
@@ -250,73 +247,6 @@ class NbBacktesting(Backtesting):
         return data, timerange
 
 
-def process_strategy(strategy: IStrategy, config: Dict[str, Any] = None) -> IStrategy:
-    """
-    Load the custom class from config parameter
-    :param config: configuration dictionary or None
-    """
-    config = config or {}
-
-    # make sure ask_strategy dict is available
-    if "ask_strategy" not in config:
-        config["ask_strategy"] = {}
-
-    if hasattr(strategy, "ticker_interval") and not hasattr(strategy, "timeframe"):
-        # Assign ticker_interval to timeframe to keep compatibility
-        if "timeframe" not in config:
-            logger.warning(
-                "DEPRECATED: Please migrate to using 'timeframe' instead of 'ticker_interval'."
-            )
-            strategy.timeframe = strategy.ticker_interval
-
-    # Set attributes
-    # Check if we need to override configuration
-    #             (Attribute name,                    default,     subkey)
-    attributes = [
-        ("minimal_roi", {"0": 10.0}, None),
-        ("timeframe", None, None),
-        ("stoploss", None, None),
-        ("trailing_stop", None, None),
-        ("trailing_stop_positive", None, None),
-        ("trailing_stop_positive_offset", 0.0, None),
-        ("trailing_only_offset_is_reached", None, None),
-        ("use_custom_stoploss", None, None),
-        ("process_only_new_candles", None, None),
-        ("order_types", None, None),
-        ("order_time_in_force", None, None),
-        ("stake_currency", None, None),
-        ("stake_amount", None, None),
-        ("protections", None, None),
-        ("startup_candle_count", None, None),
-        ("unfilledtimeout", None, None),
-        ("use_sell_signal", True, "ask_strategy"),
-        ("sell_profit_only", False, "ask_strategy"),
-        ("ignore_roi_if_buy_signal", False, "ask_strategy"),
-        ("sell_profit_offset", 0.0, "ask_strategy"),
-        ("disable_dataframe_checks", False, None),
-        ("ignore_buying_expired_candle_after", 0, "ask_strategy"),
-    ]
-    for attribute, default, subkey in attributes:
-        if subkey:
-            StrategyResolver._override_attribute_helper(
-                strategy, config.get(subkey, {}), attribute, default
-            )
-        else:
-            StrategyResolver._override_attribute_helper(strategy, config, attribute, default)
-
-    # Loop this list again to have output combined
-    for attribute, _, subkey in attributes:
-        if subkey and attribute in config[subkey]:
-            logger.info("Strategy using %s: %s", attribute, config[subkey][attribute])
-        elif attribute in config:
-            logger.info("Strategy using %s: %s", attribute, config[attribute])
-
-    StrategyResolver._normalize_attributes(strategy)
-
-    StrategyResolver._strategy_sanity_validations(strategy)
-    return strategy
-
-
 @log_execute_time("Whole Backtesting Process (Backtest + Log)")
 def backtest(preset: BasePreset, 
              strategy: Union[str, Callable[[], None]], 
@@ -327,32 +257,29 @@ def backtest(preset: BasePreset,
         preset: Any kind of Preset (ConfigPreset, LocalPreset, CloudPreset)
         strategy: str or function that has strategy code
     """
-    config_backtesting, config_optimize = preset.get_configs()
-    
-    if callable(strategy):
-        parsed_strategy_code = parse_function_body(strategy)
-    elif isinstance(strategy, str):
-        parsed_strategy_code = strategy
-    else:
-        raise ValueError("Strategy must instance of Callable or plain String (from strategy code)")
+    config_plain = preset.get_config()
+    config_optimize_bt = preset.get_config_optimize(RunMode.BACKTEST)
     
     if dataloader is None:
         logger.warning(("WARNING: You are not using DataLoader." \
                        "Expect slow process when freqtrade loads the same BT data."))
         dataloader = DataLoader(max_n_datasets=0)
     
-    backtester = NbBacktesting(config_optimize)
     try:
-        stats, summary = backtester.start_nb_backtesting(parsed_strategy_code, clsname, dataloader)
+        parsed_strategy_code = parse_strategy_code(strategy)
+        strategy_object = get_strategy_object(parsed_strategy_code, config_optimize_bt, clsname)
+        backtester = NbBacktesting(config_optimize_bt, strategies=[strategy_object])
+        stats, summary = backtester.start_nb_backtesting( dataloader)
+    
     except AttributeError as e:
         if "'PairLock' has no attribute 'query'" in str(e):
             logger.warning(f"AttributeError: {e}")
-            logger.warning("Please backtest again.")
+            logger.warning("Backtesting again...")
             dataloader.clear()
             return backtest(preset, strategy, clsname, dataloader)
         raise e
     
-    log_preset(preset, parsed_strategy_code, stats, config_backtesting, config_optimize)
+    log_preset(preset, parsed_strategy_code, stats, config_plain, config_optimize_bt)
     
     return stats, summary
 

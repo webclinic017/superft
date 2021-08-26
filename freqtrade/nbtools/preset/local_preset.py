@@ -25,13 +25,7 @@ class LocalPreset(BasePreset):
             self.default_strategy_code = fs.read()
             logger.debug(f"Detected default strategy with {len(self.default_strategy_code.splitlines())} lines")
         
-        self.name = self.path_local_preset.name
-
-    def get_configs(self) -> Tuple[dict, dict]:
-        """ Returns (config_backtesting, config_optimize)
-        """
         with (self.path_local_preset / "config-backtesting.json").open("r") as fs:
-            config_backtesting = rapidjson.load(fs)
+            self._config = rapidjson.load(fs)
         
-        config_optimize = self.get_config_optimize(config_backtesting)
-        return config_backtesting, config_optimize
+        self.name = self.path_local_preset.name

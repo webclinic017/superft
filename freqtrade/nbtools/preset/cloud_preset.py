@@ -26,16 +26,10 @@ class CloudPreset(BasePreset):
             self.default_strategy_code = fs.read()
             logger.debug(f"Detected default strategy with {len(self.default_strategy_code.splitlines())} lines")
 
+        with (self.path_to_preset / "config-backtesting.json").open("r") as fs:
+            self._config = rapidjson.load(fs)
+
         if "__" in self.name:
             self.name = self.name.split("__")[0]
         
         self.path_to_preset = preset_path
-
-    def get_configs(self) -> Tuple[dict, dict]:
-        """ Returns (config_backtesting, config_optimize)
-        """
-        with (self.path_to_preset / "config-backtesting.json").open("r") as fs:
-            config_backtesting = rapidjson.load(fs)
-
-        config_optimize = self.get_config_optimize(config_backtesting)
-        return config_backtesting, config_optimize

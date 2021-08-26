@@ -1,17 +1,5 @@
-import ast
-from typing import List
+import argparse
 
-
-string = """
-class MyClass:
-    def __init__(self):
-        pass
-"""
-
-
-def get_classes_in_python_string(string: str) -> List[str]:
-    tree = ast.parse(string)
-    return [node.name for node in ast.walk(tree) if isinstance(node, ast.ClassDef)]
-
-
-print(get_classes_in_python_string(string))
+parser = argparse.ArgumentParser(description='Free, open source crypto trading bot')
+args = parser.parse_args(["freqtrade", "backtesting", "--timeperiod", "20210101"])
+print(args)

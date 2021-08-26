@@ -1,6 +1,8 @@
 from typing import Tuple, Optional, List
 from abc import ABC, abstractmethod
 from pathlib import Path
+from copy import deepcopy
+
 import attr
 import logging
 
@@ -26,8 +28,13 @@ class BasePreset(ABC):
     # Basic Parameters
     name: str = attr.ib()
     path_data: Path = attr.ib()
+    
     # Must Input Backtesting Parameters
     timerange: str = attr.ib()
+    
+    # Required to be initialized later
+    _config: dict = attr.ib(init=False)
+    
     # Optional but Customizable Parameters. Overwrites the cloud config but not local.
     pairs: Optional[List[str]] = attr.ib(init=False)
     exchange: Optional[str] = attr.ib(init=False)
@@ -48,64 +55,72 @@ class BasePreset(ABC):
         setattr(self, "strategy_search_path", None)
         setattr(self, "timeframe", None)
 
-    def get_config_optimize(self, config_backtesting: dict) -> dict:
-        """ Overwrite config_backtesting (if any overwrites) then get the configuration 
-            for the optimize module
-        """
-        logger.info(f"Setting config for {self.name} ...")
+    def get_config(self) -> dict:
+        config_bt = deepcopy(self._config)
         
-        if config_backtesting["stake_amount"] < 0:
+        if config_bt["stake_amount"] < 0:
             logger.info("Detected stake amount of negative amount. Setting to `unlimited`")
-            config_backtesting["stake_amount"] = "unlimited"
+            config_bt["stake_amount"] = "unlimited"
         
         if self.pairs is not None:
             logger.info(
-                f"Overwriting pairs (from {len(config_backtesting['exchange']['pair_whitelist'])} to {len(self.pairs)} pairs)"
+                f"Overwriting pairs (from {len(config_bt['exchange']['pair_whitelist'])} to {len(self.pairs)} pairs)"
             )
-            config_backtesting["exchange"]["pair_whitelist"] = self.pairs
+            config_bt["exchange"]["pair_whitelist"] = self.pairs
         
         if self.exchange is not None:
-            logger.info(f"Overwriting exchange from {config_backtesting['exchange']['name']} to {self.exchange}")
-            config_backtesting["exchange"]["name"] = self.exchange
+            logger.info(f"Overwriting exchange from {config_bt['exchange']['name']} to {self.exchange}")
+            config_bt["exchange"]["name"] = self.exchange
         
         if self.starting_balance is not None:
-            logger.info(f"Overwriting starting balance from {config_backtesting.get('dry_run_wallet', None)} to {self.starting_balance}")
-            config_backtesting.update({"dry_run_wallet": self.starting_balance})
+            logger.info(f"Overwriting starting balance from {config_bt.get('dry_run_wallet', None)} to {self.starting_balance}")
+            config_bt.update({"dry_run_wallet": self.starting_balance})
         
         if self.stake_amount is not None:
-            logger.info(f"Overwriting stake amount from {config_backtesting['stake_amount']} to {self.stake_amount}")
-            config_backtesting.update({"stake_amount": self.stake_amount})
+            logger.info(f"Overwriting stake amount from {config_bt['stake_amount']} to {self.stake_amount}")
+            config_bt.update({"stake_amount": self.stake_amount})
         
         if self.max_open_trades is not None:
-            logger.info(f"Overwriting max open trades from {config_backtesting['max_open_trades']} to {self.max_open_trades}")
-            config_backtesting.update({"max_open_trades": self.max_open_trades})
+            logger.info(f"Overwriting max open trades from {config_bt['max_open_trades']} to {self.max_open_trades}")
+            config_bt.update({"max_open_trades": self.max_open_trades})
         
         if self.fee is not None:
-            logger.info(f"Overwriting max open trades from {config_backtesting.get('fee', None)} to {self.fee}")
-            config_backtesting.update({"fee": self.fee})
+            logger.info(f"Overwriting max open trades from {config_bt.get('fee', None)} to {self.fee}")
+            config_bt.update({"fee": self.fee})
 
         if self.strategy_search_path is not None:
             logger.info(f"Add strategy search path {self.strategy_search_path}")
-            config_backtesting.update({"strategy_path": self.strategy_search_path})
+            config_bt.update({"strategy_path": self.strategy_search_path})
 
         if self.timeframe is not None:
             logger.info(
-                f"Overwriting timeframe from {config_backtesting.get('timeframe', None)} to {self.timeframe}"
+                f"Overwriting timeframe from {config_bt.get('timeframe', None)} to {self.timeframe}"
             )
             logger.warning(
                 f"WARNING: Overwriting timeframe means overwrite strategy's original timeframe!"
             )
-            config_backtesting.update({"timeframe": self.timeframe})
+            config_bt.update({"timeframe": self.timeframe})
+            
+        return config_bt
+            
+
+    def get_config_optimize(self, runmode: RunMode, extra_args: dict = {}) -> dict:
+        """ Overwrite config_backtesting (if any overwrites) then get the configuration 
+            for the optimize module
+        """
+        config_bt = self.get_config()
+        logger.info(f"Setting config for {self.name} ...")
 
         args = {
-            "datadir": self.path_data / config_backtesting["exchange"]["name"],
+            "datadir": self.path_data / config_bt["exchange"]["name"],
             "timerange": self.timerange,
+            **extra_args
         }
         
         logger.info(f"Setting arg `datadir` to {args['datadir']}")
         logger.info(f"Setting arg `timerange` to {args['timerange']}")
 
-        return setup_optimize_configuration(config_backtesting, args, RunMode.BACKTEST)
+        return setup_optimize_configuration(config_bt, args, runmode)
 
     def overwrite_config(self, 
                          *,
@@ -122,9 +137,3 @@ class BasePreset(ABC):
         for key, value in locals().items():
             if value is not None:
                 setattr(self, key, value)
-
-    @abstractmethod
-    def get_configs(self) -> Tuple[dict, dict]:
-        """ Returns (config_backtesting, config_optimize)
-        """
-        raise NotImplementedError()

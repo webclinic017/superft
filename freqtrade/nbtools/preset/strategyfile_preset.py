@@ -26,12 +26,5 @@ class FilePreset(BasePreset):
             logger.debug(f"Detected strategy with {len(self.default_strategy_code.splitlines())} lines")
         
         self.name = self.path_to_file.name.replace(".py", "")
+        self._config = deepcopy(self.config_dict)
         print(f"Preset name: {self.name}")
-    
-    def get_configs(self) -> Tuple[dict, dict]:
-        """ Returns (config_backtesting, config_optimize)
-        """
-        
-        config_backtesting = deepcopy(self.config_dict)
-        config_optimize = self.get_config_optimize(config_backtesting)
-        return (config_backtesting, config_optimize)

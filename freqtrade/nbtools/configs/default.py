@@ -37,15 +37,23 @@ DEFAULT = {
         "secret": "your_exchange_secret",
         "ccxt_config": {"enableRateLimit": True},
         "ccxt_async_config": {"enableRateLimit": True, "rateLimit": 200},
-        "pair_whitelist": [
-
-        ],
+        "pair_whitelist": [],
         "pair_blacklist": [
-            "BNB/USDT", 
-            "BNB/BUSD", 
-            "BNB/USDC",
-            "DAI/BNB",
-        ],
+            # Exchange
+            ".*(BNB|KCS)/.*",
+            # Major (because low volatility = slippage)
+            # ".*(BTC|ETH)/.*",
+            # Leverage
+            ".*(_PREMIUM|3L|3S|BEAR|BULL|UP|DOWN|HALF|HEDGE|[1235][SL])/.*",
+            # Fiat
+            ".*(AUD|BRZ|CAD|CHF|EUR|GBP|HKD|IDRT|JPY|NGN|RUB|SGD|TRY|UAH|USD|ZAR)/.*",
+            # Stablecoins
+            ".*(BUSD|CUSDT|DAI|PAX|PAXG|SUSD|TUSD|USDC|USDT|VAI)/.*",
+            # Fan Tokens
+            # ".*(ACM|AFA|ALA|ALL|APL|ASR|ATM|BAR|CAI|CITY|FOR|GAL|GOZ|IBFK|JUV|LEG|LOCK-1|NAVI|NMR|NOV|OG|PFL|PSG|ROUSH|STV|TH|TRA|UCH|UFC|YBO)/.*",
+            # Others
+            # ".*(DOGE|SHIB|SLP)/.*"
+        ]
     },
     "pairlists": [{"method": "StaticPairList"}],
     "edge": {
@@ -67,10 +75,10 @@ DEFAULT = {
         "token": "your_telegram_token",
         "chat_id": "your_telegram_chat_id",
         "keyboard": [   
-            ["/daily", "/stats", "/balance", "/profit"],
-            ["/status table", "/performance", "/balance"],
-            ["/show_config", "/trades 10", "/count"],
-            ["/start", "/stop", "/logs"],
+            ["/status table", "/trades", "/profit"],
+            ["/daily", "/stats", "/performance"],
+            ["/show_config"],
+            ["/start", "/stop", "/logs", "/help"],
         ],
     },
     "api_server": {

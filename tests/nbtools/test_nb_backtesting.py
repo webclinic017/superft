@@ -119,7 +119,7 @@ def test_backtest_e2e(path_data = path_data()):
         name="test_backtest_e2e",
         path_data=path_data,
         timerange=TIMERANGE,
-        config_dict=TESTING_BTC_USDT
+        config_dict=TESTING_BTC_USDT,
     )
     stats, summary = backtest(preset, strategy_func)
     assert stats is not None
