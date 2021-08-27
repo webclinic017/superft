@@ -78,6 +78,7 @@ hyperopt_args = {
     "hyperopt_loss": "SharpeHyperOptLoss",
     "hyperopt_min_trades": 10,
     "hyperopt_random_state": 2,
+    "hyperopt_jobs": 12,
 }
 
 preset = FilePreset(
