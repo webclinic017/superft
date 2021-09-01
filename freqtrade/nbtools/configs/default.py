@@ -41,7 +41,7 @@ DEFAULT = {
         "pair_blacklist": [
             # Exchange
             ".*(BNB|KCS)/.*",
-            # Major (because low volatility = slippage)
+            # Major (because low volatility = rekt by commission)
             # ".*(BTC|ETH)/.*",
             # Leverage
             ".*(_PREMIUM|3L|3S|BEAR|BULL|UP|DOWN|HALF|HEDGE|[1235][SL])/.*",
@@ -50,7 +50,7 @@ DEFAULT = {
             # Stablecoins
             ".*(BUSD|CUSDT|DAI|PAX|PAXG|SUSD|TUSD|USDC|USDT|VAI)/.*",
             # Fan Tokens
-            # ".*(ACM|AFA|ALA|ALL|APL|ASR|ATM|BAR|CAI|CITY|FOR|GAL|GOZ|IBFK|JUV|LEG|LOCK-1|NAVI|NMR|NOV|OG|PFL|PSG|ROUSH|STV|TH|TRA|UCH|UFC|YBO)/.*",
+            ".*(ACM|AFA|ALA|ALL|APL|ASR|ATM|BAR|CAI|CITY|FOR|GAL|GOZ|IBFK|JUV|LEG|LOCK-1|NAVI|NMR|NOV|OG|PFL|PSG|ROUSH|STV|TH|TRA|UCH|UFC|YBO)/.*",
             # Others
             # ".*(DOGE|SHIB|SLP)/.*"
         ]
@@ -94,41 +94,5 @@ DEFAULT = {
     "bot_name": "freqtrade",
     "initial_state": "running",
     "forcebuy_enable": False,
-    "internals": { "process_throttle_secs": 30 },
+    "internals": { "process_throttle_secs": 10 },
 }
-
-DEFAULT_BUYMARKET = deepcopy(DEFAULT)
-DEFAULT_BUYMARKET["order_types"]["buy"] = "market"
-DEFAULT_BUYMARKET["bid_strategy"]["price_side"] = "ask"
-
-DEFAULT_BUYMARKET_CUSTOMPAIRLIST = deepcopy(DEFAULT_BUYMARKET)
-DEFAULT_BUYMARKET_CUSTOMPAIRLIST["pairlists"] = [
-    {
-        "method": "VolumePairList",
-        "number_assets": 100,
-        "sort_key": "quoteVolume",
-        "refresh_period": 900
-    },
-    {"method": "AgeFilter", "min_days_listed": 7},
-    {"method": "SpreadFilter", "max_spread_ratio": 0.005},
-    {"method": "PriceFilter", "low_price_ratio": 0.002},
-    {
-        "method": "RangeStabilityFilter",
-        "lookback_days": 3,
-        "min_rate_of_change": 0.1,
-        "refresh_period": 1800
-    },
-    {
-        "method": "VolatilityFilter",
-        "lookback_days": 3,
-        "min_volatility": 0.0,
-        "max_volatility": 0.75,
-        "refresh_period": 1800
-    },
-    {
-        "method": "VolumePairList",
-        "number_assets": 80,
-        "sort_key": "quoteVolume",
-        "refresh_period": 900
-    },
-]

@@ -12,7 +12,7 @@ from freqtrade.nbtools.helper import free_mem
     
 def load_df(path_json: Path, timeframe: str):
     headers = ["date", "open", "high", "low", "close", "volume"]
-    d1 = pd.read_json(path_json)
+    d1 = pd.read_json(str(path_json))
     d1.columns = headers
     d1["date"] = pd.to_datetime(d1["date"], unit='ms', utc=True, infer_datetime_format=True)
     d1 = d1.astype(

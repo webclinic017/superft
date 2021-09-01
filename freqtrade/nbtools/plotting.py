@@ -48,7 +48,7 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
 
     # Section 1.2: Cumulative profit $ over time
     trades = trades.loc[(trades.open_date >= start) & (trades.close_date <= end)]
-    trades = trades.set_index("close_date")
+    trades = trades.set_index("close_date", drop=False)
     cum_profit_abs = trades["profit_abs"].cumsum()
     ax2 = ax1.twinx()
     
@@ -69,7 +69,7 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
         
     ax2.grid(b=True, which="both", color=grid_color, linestyle="-", axis="both", alpha=grid_alpha)
 
-    plt.title("BTC/USDT (orange), Returns in $ (green)")
+    plt.title(name)
     plt.show()
 
     # Section 2: Create [left and right] plots
@@ -90,16 +90,15 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     plt.show()
 
     portfolio_summary = {
-        "Min Balance": round(min(cum_profit_abs), 2),
-        "Max Balance": round(max(cum_profit_abs), 2),
-        "End Balance": round(cum_profit_abs[-1], 2),
         "Trades": len(cum_profit_abs),
-        "Avg. Profit %": round(trades["profit_ratio"].mean() * 100, 2),
-        "Avg. Profit $": round(cum_profit_abs[-1] / len(cum_profit_abs), 2),
-        "Biggest Profit $": round(trades.profit_abs.max(), 2),
-        "Biggest Loss $": round(trades.profit_abs.min(), 2),
+        "Min Balance": min(cum_profit_abs),
+        "Max Balance": max(cum_profit_abs),
+        "Final Balance": cum_profit_abs[-1],
+        "Avg. Return (%)": trades["profit_ratio"].mean() * 100,
+        "Avg. Return ($)": cum_profit_abs[-1] / len(cum_profit_abs),
+        "Avg. Trade Duration": str((trades["close_date"] - trades["open_date"]).mean()).split(".")[0],
     }
-    df = pd.DataFrame({k: [v] for k, v in portfolio_summary.items()}).T
+    df = pd.DataFrame({k: [v] for k, v in portfolio_summary.items()}).T.round(2)
     df.columns = ["Portfolio Summary"]
     
     # save to json

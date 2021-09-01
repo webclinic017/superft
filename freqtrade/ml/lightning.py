@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Optional
 from wandb.wandb_run import Run
 from datetime import datetime
 
@@ -46,6 +46,9 @@ class LightningConfig:
     # Unbiased backtesting range 
     test_start: datetime     = attr.ib()
     test_end: datetime       = attr.ib()
+    
+    # Optional configs
+    num_training_epochs: Optional[int] = attr.ib(default=None)
     
     # DataFrame columns
     column_y: str = attr.ib(init=False, default="ml_label")

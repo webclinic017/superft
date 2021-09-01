@@ -142,7 +142,7 @@ class CatBoost(LightningModule):
     
     def on_define_model(self, run: Run, X_train, X_val, y_train, y_val) -> Any:
         return CatBoostClassifier(
-            iterations=self.config.num_epochs, 
+            iterations=self.config.num_training_epochs, 
             task_type="GPU",
          )
     

@@ -261,6 +261,8 @@ def start_hyperopt(preset: BasePreset,
     
     from filelock import FileLock, Timeout
     
+    print("Starting HyperOpt")
+    
     config_optimize_hyperopt = preset.get_config_optimize(RunMode.HYPEROPT, extra_args=hyperopt_args)
     strategy_object = get_preset_strategy(preset, config_optimize_hyperopt, clsname)    
     lock = FileLock(Hyperopt.get_lock_filename(config_optimize_hyperopt))

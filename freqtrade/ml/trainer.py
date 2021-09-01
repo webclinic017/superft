@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import List, Any
+from copy import deepcopy
 from wandb.sdk.wandb_run import Run
 
 import attr
@@ -36,17 +37,21 @@ class TradingTrainer:
     9. inference: predict()
     """
     
-    def fit(self, module: LightningModule, wandb_run: Run, log_wandb: bool = True) -> LightningContainer:
-        """ Start Training Model. Returns LightningContainer with Trained Model. 
+    def fit(self, module: LightningModule, wandb_run: Run, log_wandb: bool = True, skip: bool = False) -> LightningContainer:
+        """ 
+        Start Training Model. Returns LightningContainer with Trained Model. 
         """
         cont = LightningContainer(module)
+        
+        if not skip:
+            self._mini_training(cont, wandb_run)
         
         X_train, X_val, y_train, y_val = cont.get_dataset()
         
         cont.define_model(wandb_run, X_train, X_val, y_train, y_val)
         
         try:
-            self.validate_predict(cont)
+            self.validate_predict(cont, do_print=False)
         except Exception as e:
             logging.warning(f"ERROR on validating predict function: `{e}`")
             logging.warning(f"Please run `trainer.validate_predict()` after training finished!")
@@ -62,9 +67,42 @@ class TradingTrainer:
             
         return cont
     
+    def _mini_training(self, container: LightningContainer, wandb_run: Run):
+        """ 
+        Train using smaller dataset to validate if the algorithm behaves correctly
+        """
+        logger.info("Validating model using mini training...")
+        cont = deepcopy(container)
+        
+        def on_get_data_paths(cwd: Path, timeframe: str, exchange: str):
+            path_data_exchange = cwd.parent / "mount" / "data" / exchange
+
+            return [
+                datapath
+                for datapath in list(path_data_exchange.glob(f"*-{timeframe}.json"))
+                if datapath.name.split("-")[0].replace("_", "/")
+                in ["BTC/USDT"]
+            ]
+        
+        cont.module.on_get_data_paths = on_get_data_paths
+
+        if cont.module.config.num_training_epochs is not None:
+            cont.module.config.num_training_epochs = 10
+        
+        X_train, X_val, y_train, y_val = cont.get_dataset()
+        cont.define_model(wandb_run, X_train, X_val, y_train, y_val)
+        cont.start_training(wandb_run, X_train, X_val, y_train, y_val)
+        
+        for clean in [X_train, X_val, y_train, y_val]:
+            free_mem(clean)
+        
+        self.validate_predict(cont, do_print=False)
+        logger.info("Validate model OK!")
+    
     def _wandb_log(self, cont: LightningContainer, run: Run):
-        """ - Log string and non object attrs as JSON
-            - Log whole module object
+        """ 
+        - Log string and non object attrs as JSON
+        - Log whole module object
         """
         foldername = f"lightning_{cont.module.config.name}_{get_readable_date()}"
         
@@ -81,14 +119,17 @@ class TradingTrainer:
         artifact.add_dir(str(path_to_folder))
         run.log_artifact(artifact) # pyright: reportGeneralTypeIssues=false
         
-    def validate_predict(self, cont: LightningContainer):
-        """ Validate model container predict function:
+    def validate_predict(self, cont: LightningContainer, do_print: bool = True):
+        """ 
+        Validate model container predict function:
         - Type of df_predict must DataFrame
         - There must be a new columns in the df_predict DataFrame
         - df_predict length must same as the df_original
         - df_predict index must not changed
         """
-        df_original: pd.DataFrame = load_df("BTC_USDT-5m.json", "5m").loc[410000:414000]
+        tf = cont.config.timeframe
+        
+        df_original: pd.DataFrame = load_df(f"user_data/dataset/BTC_USDT-{tf}.json", tf).iloc[-10000:]
         df_predict = df_original.copy()
         df_predict = cont.predict(df_predict)
         df_vanilla_preds = self.vanilla_predict(cont, df_original)
@@ -97,17 +138,18 @@ class TradingTrainer:
         if not isinstance(df_predict, pd.DataFrame):
             raise TypeError(f"'df_predict' type is '{type(df_predict)}'. needed: pandas.DataFrame")
         
-        print("\nDataset: Binance BTC/USDT 5m loc[410000:414000] (Freqtrade Regularized)")
-        print("\n\nDF WITH PREDICTIONS INFO\n----------")
-        print(df_predict.info())
-        print("\n\nOriginal DF\n----------")
-        print(df_original)
-        print("\n\nWith Prediction DF\n----------")
-        print(df_predict)
-        print("\n\nVanilla Prediction DF [MAKE SURE SAME!]\n----------")
-        print(df_vanilla_preds)
-        print("\nLEN VANILLA PREDS: %s" % len(df_vanilla_preds))
-        print("LEN WITH PREDS NON NAN: %s" % len(df_predict.dropna()))
+        if do_print:
+            print(f"\nDataset: Binance BTC/USDT {tf} iloc[-10000:] (Freqtrade Regularized)")
+            print("\n\nDF WITH PREDICTIONS INFO\n----------")
+            print(df_predict.info())
+            print("\n\nDF Original\n----------")
+            print(df_original)
+            print("\n\nDF + Preds\n----------")
+            print(df_predict)
+            print("\n\nVanilla Prediction [MAKE SURE SAME WITH PREDICTION DF!]\n----------")
+            print(df_vanilla_preds)
+            print("\nLEN VANILLA PREDS: %s" % len(df_vanilla_preds))
+            print("LEN DF + PREDS NON NAN: %s" % len(df_predict.dropna()))
         
         # df_predict length must same as the df_original
         if len(df_predict) != len(df_original):
@@ -149,7 +191,9 @@ class TradingTrainer:
         return df_predict
         
     def vanilla_predict(self, container: LightningContainer, df_original_: pd.DataFrame) -> pd.DataFrame:
-        """ Predict without going through the container's predict processing """
+        """ 
+        Predict without going through the container's predict processing
+        """
         df_original = container.add_features(df_original_.copy())
         df_original = df_original[container.module.config.columns_x]
         return container.module.on_predict(df_original)

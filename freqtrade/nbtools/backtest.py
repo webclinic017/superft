@@ -15,7 +15,6 @@ from pandas import DataFrame
 from pathlib import Path
 from collections import deque, defaultdict
 from datetime import datetime, timedelta
-from tqdm import tqdm_notebook
 # from distributed import Client
 # os.environ["MODIN_ENGINE"] = "dask"
 # client = Client(n_workers=6)
@@ -84,7 +83,9 @@ class DataLoader:
                 data_format: str = 'json'
                 ) -> Any:
         
-        startup_candles = 1000
+        if not (timeframe.endswith("h") or timeframe.endswith("d")):
+            startup_candles = 1000
+        
         _locals = deepcopy(locals())
         
         if timerange is not None:
@@ -308,11 +309,8 @@ def log_preset(preset: BasePreset, strategy_code: str, stats: dict, config_backt
 
     for filename, content in filename_and_content.items():
         with open(f"./.temp/{preset_name}/{filename}", mode="w") as f:
-            if "config" in filename or filename == "metadata.json":
-                json.dump(content, f, default=str, indent=4)
-                continue
             if filename.endswith(".json"):
-                rapidjson.dump(content, f, default=str, number_mode=rapidjson.NM_NATIVE)
+                json.dump(content, f, default=str, indent=4)
                 continue
             if isinstance(content, str):
                 f.write(content)
@@ -369,6 +367,9 @@ def generate_metadata(
     trades = pd.DataFrame(deepcopy(stats["strategy"][clsname]["trades"]))
     trades_summary = deepcopy(stats["strategy"][clsname])
     current_date_fmt = current_date.split("_")[0] + " " + current_date.split("_")[1].replace("-", ":")
+    
+    if trades_summary["total_trades"] == 0:
+        raise ValueError("Got zero trades.")
     
     # You can add or remove any columns you want here
     metadata = {

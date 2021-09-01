@@ -85,14 +85,15 @@ class LightningContainer:
         
         return df_onepair
     
-    def add_features(self, df_onepair: pd.DataFrame) -> pd.DataFrame:
+    def add_features(self, df_onepair: pd.DataFrame, dropna: bool = True) -> pd.DataFrame:
         """ Container wrapper for module.add_features()"""
         df_onepair = to_fp32(df_onepair)
         df_onepair = self.module.on_add_features(df_onepair)
-        
-        df_onepair = df_onepair.loc[df_onepair.first_valid_index():]
         df_onepair = df_onepair.replace([np.inf, -np.inf], np.nan)
-        df_onepair = df_onepair.dropna()
+        
+        if dropna:
+            df_onepair = df_onepair.loc[df_onepair.first_valid_index():]
+            df_onepair = df_onepair.dropna()
         
         return df_onepair
 
@@ -122,20 +123,20 @@ class LightningContainer:
         """ Container wrapper for module.start_training() """
         return self.module.on_start_training(run, X_train, X_val, y_train, y_val)
     
-    def predict(self, df_onepair_original: pd.DataFrame) -> pd.DataFrame:
+    def predict_deprecated(self, df_onepair_original: pd.DataFrame) -> pd.DataFrame:
         """ Container wrapper for module.predict().
         Returns the original of DataFrame with prediction columns. 
         This inference will be used in strategy.py file that loaded from wandb.
         """
         df_preds = df_onepair_original.copy()
-        df_preds = self.add_features(df_preds)
+        df_preds = self.add_features(df_preds, dropna=True)
         
         # Only use X columns.
         df_preds = df_preds[self.module.config.columns_x]
         df_preds = self.module.on_predict(df_preds)
         
         try:
-            # Drop X columns because freqtrade doesn't need it.
+            # Drop X columns because freqtrade doesn't need this.
             df_preds = df_preds.drop(columns=self.module.config.columns_x)
         except KeyError:
             logger.info("Not dropping X columns in predict because it doesn't exist in predict columns")
@@ -145,6 +146,42 @@ class LightningContainer:
         
         # Return original freqtrade dataframe with prediction columns.
         df_onepair_original = concat_columns_last_index(df_onepair_original, df_preds)
+        return df_onepair_original
+    
+    def predict(self, df_onepair_original: pd.DataFrame) -> pd.DataFrame:
+        """ Container wrapper for module.predict().
+        Returns the original of DataFrame with prediction columns. 
+        This inference will be used in strategy.py file that loaded from wandb.
+        """
+        df_X = df_onepair_original.copy()
+        df_X = self.add_features(df_X, dropna=False)
+        df_X = df_X[self.module.config.columns_x]
+        
+        # Step 1: Store a list of row indexes that non NaN
+        non_nan_indexes = df_X[~df_X.isnull().any(axis=1)].index
+        
+        # Step 2: Predict using non NaN rows
+        df_preds = self.module.on_predict(df_X.loc[non_nan_indexes])
+        
+        try:
+            # Drop X columns because freqtrade doesn't need this.
+            df_preds = df_preds.drop(columns=self.module.config.columns_x)
+        except KeyError:
+            logger.info("Not dropping X columns in predict because it doesn't exist in predict columns")
+        
+        df_preds.columns = [str(f"ml_{it}") for it in df_preds.columns]
+        logger.info(f"Returned new columns from df_preds: {list(df_preds.columns)}")
+        
+        # Step 3: Concat predictions to non NaN pred indexes
+        len_preds = len(df_preds)
+        len_x_non_nan = len(non_nan_indexes)
+        
+        if len_preds != len_x_non_nan:
+            raise ValueError(f"Len df_preds is `{len_preds}`. But len df_X_non_nan is `{len_x_non_nan}`")
+        
+        df_preds.index = non_nan_indexes
+        df_onepair_original = pd.concat([df_onepair_original, df_preds], axis=1)
+        
         return df_onepair_original
     
     def training_step(self, run: Run, data: dict):

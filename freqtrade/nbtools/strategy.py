@@ -17,13 +17,13 @@ class INbStrategy(IStrategy):
     ignore_roi_if_buy_signal = False
     # Number of candles the strategy requires before producing valid signals
     # NOTE: Depends on your training feature timeframe!
-    startup_candle_count: int = 800
-    # Optional order type mapping.
-    order_types = {
-        "buy": "limit",
-        "sell": "limit",
-        "stoploss": "market",
-        "stoploss_on_exchange": False,
-    }
+    startup_candle_count: int = 400
     # Optional order time in force.
     # order_time_in_force = {"buy": "gtc", "sell": "gtc"}
+    
+    _prints = []
+    
+    def print_once(self, content, name="just_once"):
+        if name not in self._prints:
+            print(content)
+            self._prints.append(name)

@@ -23,13 +23,13 @@ gc.collect()
 
 while "freqtrade" not in os.listdir():
     os.chdir("..")
-    if "freqtrade" in os.listdir():
-        logger = logging.getLogger("freqtrade")
-        handler = logging.StreamHandler(stream=sys.stdout)
-        handler.setFormatter(logging.Formatter("%(name)s - %(message)s"))
-        logger.addHandler(handler)
-        logger.setLevel(logging.INFO)
-        logging.getLogger("distributed.utils_perf").setLevel(logging.ERROR)
+    # if "freqtrade" in os.listdir():
+    #     logger = logging.getLogger("freqtrade")
+    #     handler = logging.StreamHandler(stream=sys.stdout)
+    #     handler.setFormatter(logging.Formatter("%(name)s - %(message)s"))
+    #     logger.addHandler(handler)
+    #     logger.setLevel(logging.INFO)
+    #     logging.getLogger("distributed.utils_perf").setLevel(logging.ERROR)
 
 # Freqtrade Imports
 from freqtrade.nbtools.preset import LocalPreset, ConfigPreset, FilePreset, CloudPreset
@@ -81,6 +81,7 @@ def main(
         "hyperopt_min_trades": hyperopt_min_trades,
         "hyperopt_random_state": hyperopt_random_state,
         "hyperopt_jobs": hyperopt_jobs,
+        "verbosity": 0,
     }
 
     preset = FilePreset(
