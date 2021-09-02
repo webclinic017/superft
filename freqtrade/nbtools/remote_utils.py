@@ -161,6 +161,7 @@ def load_pickle_asset(project, asset_name, version: Union[int, str] = "latest"):
         raise FileNotFoundError(f"No '.pkl' file in '{path}''. Files: '{list(path.glob('*'))}'")
 
 
+@cache
 def load_lightning_container(project, asset_name, version: Union[int, str]) -> LightningContainer:
     """Used in: Strategy and ftrunner"""
     

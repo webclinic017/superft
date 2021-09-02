@@ -1,63 +1,61 @@
-# from catboost.datasets import titanic
-# from catboost import CatBoostClassifier, Pool, metrics, cv
-# from pathlib import Path
-# from sklearn.metrics import accuracy_score
-# from sklearn.model_selection import train_test_split
-# import numpy as np
-# import os
-# while "freqtrade" not in os.listdir():
-#     os.chdir("..")
+from joblib import Parallel, delayed, parallel_backend
 
-# train_df, test_df = titanic()
-# null_value_stats = train_df.isnull().sum(axis=0)
-# null_value_stats
-# train_df.fillna(-999, inplace=True)
-# test_df.fillna(-999, inplace=True)
-# X = train_df.drop('Survived', axis=1)
-# y = train_df.Survived
-# categorical_features_indices = np.where(X.dtypes != float)[0]
-
-# X_train, X_validation, y_train, y_validation = train_test_split(X, y, train_size=0.75, random_state=42)
-# X_test = test_df
-
-# model = CatBoostClassifier(
-#     learning_rate=0.1,
-#     custom_loss=[metrics.Accuracy()],
-#     random_seed=42,
-#     task_type="GPU",
-#     iterations=10000
-# )
-
-# print("Fitting...")
-
-# model.fit(
-#     X_train, y_train,
-#     cat_features=categorical_features_indices,
-#     eval_set=(X_validation, y_validation),
-#     verbose=10,
-# )
-
-import tensorflow as tf
-
-mnist = tf.keras.datasets.mnist
-
-(x_train, y_train), (x_test, y_test) = mnist.load_data()
-x_train, x_test = x_train / 255.0, x_test / 255.0
-
-model = tf.keras.models.Sequential([
-    tf.keras.layers.Flatten(input_shape=(28, 28)),
-    tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.Dense(10)
-])
-
-loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
-model.compile(optimizer='adam',
-              loss=loss_fn,
-              metrics=['accuracy'])
-model.fit(x_train, y_train, epochs=5)
-
-
+import os
 import pandas as pd
+import numpy as np
+import time
 
-df_onepair = pd.DataFrame({})
+
+def df_processing_function(df_inp):
+    for i in range(100):
+        df_inp[f"ma_{i}"] = df_inp["close"].rolling(i).mean()
+    return df_inp
+
+
+def parallelize_dataframe(df_input, func, split_column: str, n_cores=4):
+    df_split = [df_input[df_input[split_column] == category] for category in df_input[split_column].unique()]
+    result = Parallel(prefer="threads", n_jobs=n_cores)(delayed(func)(_df.copy()) for _df in df_split)
+    return pd.concat(result)
+
+
+def parallelize_dataframe_mp(df_input, func, split_column: str, n_cores=4):
+    df_split = deque([df_input[df_input[split_column] == category] for category in df_input[split_column].unique()])
+    pool = Pool(n_cores)
+    
+    full_result = []
+    
+    while len(df_split) > 0:
+        batch = [df_split.pop() for _ in range(n_cores) if len(df_split) > 0]
+        full_result.extend(pool.map(func, batch))
+    
+    df = pd.concat(full_result)
+    pool.close()
+    pool.join()
+    return df
+
+
+def vanilla(df_input, func, split_column: str):
+    df_split = [df_input[df_input[split_column] == category] for category in df_input[split_column].unique()]
+    return pd.concat([func(it) for it in df_split])
+
+
+if __name__ == "__main__":
+    os.environ["MODIN_ENGINE"] = "dask"
+    from distributed import Client
+    client = Client(n_workers=16)
+    import modin.pandas as mpd
+    import pandas as pd
+    
+    df = pd.DataFrame({"pair": [], "close": []})
+
+    for pair in ["BTC/USDT", "ETH/USDT", "BNB/USDT", "ADA/USDT", "BCH/USDT", "DAI/USDT", "ETC/USDT"]:
+        d1 = pd.DataFrame({"close": [np.random.randn() for _ in range(100000)],})
+        d1["pair"] = pair
+        df = pd.concat([df, d1], axis=0)
+    
+    mdf = mpd.DataFrame(df)
+    
+    t0 = time.time()
+    vanilla(mdf, df_processing_function, "pair")
+    print(time.time() - t0)
+    import pandas_ta

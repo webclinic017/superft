@@ -1,15 +1,21 @@
 from typing import List, Tuple, Any
 from pathlib import Path
 from wandb.wandb_run import Run
+from tqdm import tqdm
+from joblib import Parallel, delayed
 
 import attr
 import logging
 import numpy as np
 import pandas as pd
 import gc
-    
+import sys
+
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
 from freqtrade.ml.loader import clean_ohlcv_dataframe
 from freqtrade.ml.lightning import LightningModule, LightningConfig
+
 
 logger = logging.getLogger(__name__)
 
@@ -39,10 +45,29 @@ class LightningContainer:
     
     def _load_df_allpairs(self) -> pd.DataFrame:
         """ Load helper for all pairs of DataFrame """
-        df_list = [
-            self._load_one(filepath)
-            for filepath in self.get_data_paths(Path.cwd(), self.module.config.timeframe, self.module.config.exchange)
-        ]
+        try:
+            shell = get_ipython().__class__.__name__
+            if shell == 'ZMQInteractiveShell':
+                from tqdm.notebook import tqdm as tqdm_notebook
+                progress = tqdm_notebook
+        except:
+            progress = tqdm
+        
+        tf = self.config.timeframe
+        exchange = self.config.exchange
+        paths = self.get_data_paths(Path.cwd(), tf, exchange)
+        
+        # df_list = [
+        #     self._load_one(filepath)
+        #     for filepath in progress(
+        #         self.get_data_paths(Path.cwd(), self.module.config.timeframe, self.module.config.exchange),
+        #         desc="Loading and preprocessing data"
+        #     )
+        # ]
+        
+        df_list = Parallel(n_jobs=8, prefer="processes")(
+            delayed(self._load_one)(path) for path in progress(paths, desc="Load and preprocess data")
+        )
 
         df_allpairs = pd.concat(df_list)
         df_allpairs = df_allpairs.dropna()

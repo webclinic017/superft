@@ -21,7 +21,9 @@ class CloudPreset(BasePreset):
         
         preset_path = cloud_retrieve_preset(self.name)
         preset_path = Path.cwd() / preset_path
-
+        
+        self.path_to_preset = preset_path
+        
         with (preset_path / "strategies" / "strategy.py").open("r") as fs:
             self.default_strategy_code = fs.read()
             logger.debug(f"Detected default strategy with {len(self.default_strategy_code.splitlines())} lines")
@@ -31,5 +33,3 @@ class CloudPreset(BasePreset):
 
         if "__" in self.name:
             self.name = self.name.split("__")[0]
-        
-        self.path_to_preset = preset_path
