@@ -5,9 +5,6 @@ from wandb.wandb_run import Run
 import pandas as pd
 import gc
 import ccxt
-
-from freqtrade.ml.lightning import LightningModule
-from freqtrade.nbtools.helper import free_mem
     
     
 def load_df(path_json: Path, timeframe: str):

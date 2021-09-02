@@ -5,12 +5,11 @@ from wandb.wandb_run import Run
 import attr
 import logging
 import numpy as np
-import os
 import pandas as pd
+import gc
     
 from freqtrade.ml.loader import clean_ohlcv_dataframe
 from freqtrade.ml.lightning import LightningModule, LightningConfig
-from freqtrade.nbtools.helper import free_mem
 
 logger = logging.getLogger(__name__)
 
@@ -213,3 +212,8 @@ def concat_columns_last_index(df_main: pd.DataFrame, df_to_merge: pd.DataFrame) 
     df_to_merge_copy = df_to_merge.copy()
     df_to_merge_copy.index = df_main.index[len_main - len_to_merge : len_main]
     return pd.concat([df_main, df_to_merge_copy], axis=1)
+
+
+def free_mem(var):
+    del var
+    gc.collect()

@@ -6,6 +6,7 @@ from typing import Any, Union
 
 import cloudpickle
 import dill
+from numpy import isin
 import pandas as pd
 from pandas import DataFrame
 from functools import cache
@@ -165,9 +166,13 @@ def load_lightning_container(project, asset_name, version: Union[int, str]) -> L
     
     msg = f"Load LightningContainer version '{version}' of project: '{project}' - asset_name: '{asset_name}'."
     logger.warning(msg)
-    
+
     if version == "latest":
-        logger.warning("WARNING: You are using the LATEST version of LightningContainer asset!")
+        raise Exception("You can't load the 'latest' version of LightningContainer asset because will break "
+                        "the reproducibility when backtesting!")
+    
+    if isinstance(version, int):
+        version = "v{version}"
     
     with wandb.init(project=project, name=f"retrieve_lightning_{asset_name}:{version}") as run:
         artifact = run.use_artifact(f"{asset_name}:{version}")
@@ -183,8 +188,21 @@ def load_lightning_container(project, asset_name, version: Union[int, str]) -> L
         raise FileNotFoundError(f"No '.pkl' file in '{path}''.")
 
 
+def get_lightning_artifact_ver(project, asset_name) -> str:
+    with wandb.init(project=project, name=f"retrieve_lightning_{asset_name}:latest") as run:
+        artifact = run.use_artifact(f"{asset_name}:latest")
+        path = Path.cwd() / artifact.download()
+        
+        for fpath in path.glob("*.pkl"):
+            with fpath.open("rb") as f:
+                container = cloudpickle.load(f)
+                if not isinstance(container, LightningContainer):
+                    raise Exception("Not a LightningContainer.")
+                return str(artifact.version)
+        
+        raise FileNotFoundError(f"No '.pkl' file in '{path}''.")
+
+
 if __name__ == "__main__":
-    print("LOAD 1st")
-    print(str(load_pickle_asset("legacy-models", "15m-next30m-10_06_new.pkl"))[:50])
-    print("LOAD 2nd")
-    print(str(load_pickle_asset("legacy-models", "15m-next30m-10_06_new.pkl"))[:50])
+    ver = get_lightning_artifact_ver("15n30-catboost_l1", "15n30-catboost_l1")
+    print(ver)

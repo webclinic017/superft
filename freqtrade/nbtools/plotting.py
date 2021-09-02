@@ -90,13 +90,15 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     plt.show()
 
     portfolio_summary = {
-        "Trades": len(cum_profit_abs),
+        "Trades": len(trades),
         "Min Balance": min(cum_profit_abs),
         "Max Balance": max(cum_profit_abs),
         "Final Balance": cum_profit_abs[-1],
         "Avg. Return (%)": trades["profit_ratio"].mean() * 100,
-        "Avg. Return ($)": cum_profit_abs[-1] / len(cum_profit_abs),
         "Avg. Trade Duration": str((trades["close_date"] - trades["open_date"]).mean()).split(".")[0],
+        "Wins": len(trades.loc[trades["profit_ratio"] > 0]),
+        "Loses": len(trades.loc[trades["profit_ratio"] <= 0]),
+        "Win Rate": round(len(trades.loc[trades["profit_ratio"] > 0]) / len(trades), 2)
     }
     df = pd.DataFrame({k: [v] for k, v in portfolio_summary.items()}).T.round(2)
     df.columns = ["Portfolio Summary"]
