@@ -107,12 +107,12 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
         "Loses": len(trades_lost),
         "Win Rate": str(round(win_rate * 100, 2)) + "%",
         " - ": " - ",
-        "Sum Profit Winners (Ratio)": trades_win["profit_ratio"].sum(),
-        "Sum Profit Losers (Ratio)": trades_lost["profit_ratio"].sum(),
-        "Net Profit (Ratio)": trades_win["profit_ratio"].sum() + trades_lost["profit_ratio"].sum(),
         "Profit Factor": trades_win["profit_ratio"].sum() / -trades_lost["profit_ratio"].sum(),
         "Expectancy (% Per Trade)": expectancy,
         "  -  ": "  -  ",
+        "Net Profit (Rate)": trades_win["profit_ratio"].sum() + trades_lost["profit_ratio"].sum(),
+        "Sum Profit Winners (Rate)": trades_win["profit_ratio"].sum(),
+        "Sum Profit Losers (Rate)": trades_lost["profit_ratio"].sum(),
         "Avg. Profit (%)": trades["profit_ratio"].mean() * 100,
         "Avg. Profit (%) Winners": trades_win["profit_ratio"].mean() * 100,
         "Avg. Profit (%) Losers": trades_lost["profit_ratio"].mean() * 100,
@@ -125,7 +125,7 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
         if isinstance(portfolio_summary[k], float):
             portfolio_summary[k] = round(portfolio_summary[k], 2)
     
-    df = pd.DataFrame({k: [v] for k, v in portfolio_summary.items()}).T.round(2)
+    df = pd.DataFrame({k: [v] for k, v in portfolio_summary.items()}).T
     df.columns = ["Portfolio Summary"]
     
     # save to json

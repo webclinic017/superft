@@ -190,10 +190,11 @@ class LightningContainer:
             # Drop X columns because freqtrade doesn't need this.
             df_preds = df_preds.drop(columns=self.module.config.columns_x)
         except KeyError:
-            logger.debug("Not dropping X columns in predict because it doesn't exist in predict columns")
+            # logger.debug("Not dropping X columns in predict because it doesn't exist in predict columns")
+            pass
         
         df_preds.columns = [str(f"ml_{it}") for it in df_preds.columns]
-        logger.debug(f"Returned new columns from df_preds: {list(df_preds.columns)}")
+        # logger.debug(f"Returned new columns from df_preds: {list(df_preds.columns)}")
         
         # Step 3: Concat predictions to non NaN pred indexes
         len_preds = len(df_preds)

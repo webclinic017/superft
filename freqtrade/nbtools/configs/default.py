@@ -41,8 +41,6 @@ DEFAULT = {
         "pair_blacklist": [
             # Exchange
             ".*(BNB|KCS)/.*",
-            # Major (because low volatility = rekt by commission)
-            # ".*(BTC|ETH)/.*",
             # Leverage
             ".*(_PREMIUM|3L|3S|BEAR|BULL|UP|DOWN|HALF|HEDGE|[1235][SL])/.*",
             # Fiat
@@ -50,9 +48,9 @@ DEFAULT = {
             # Stablecoins
             ".*(BUSD|CUSDT|DAI|PAX|PAXG|SUSD|TUSD|USDC|USDT|VAI)/.*",
             # Fan Tokens
-            ".*(ACM|AFA|ALA|ALL|APL|ASR|ATM|BAR|CAI|CITY|FOR|GAL|GOZ|IBFK|JUV|LEG|LOCK-1|NAVI|NMR|NOV|OG|PFL|PSG|ROUSH|STV|TH|TRA|UCH|UFC|YBO)/.*",
+            ".*(ACM|AFA|ALA|ALL|APL|ASR|ATM|BAR|CAI|CITY|FOR|GAL|GOZ|IBFK|JUV|LEG|LOCK-1|NAVI|NMR|NOV|PFL|PSG|ROUSH|STV|TRA|UCH|UFC|YBO)/.*",
             # Others
-            # ".*(DOGE|SHIB|SLP)/.*"
+            ".*(SHIB|SLP)/.*"
         ]
     },
     "pairlists": [{"method": "StaticPairList"}],

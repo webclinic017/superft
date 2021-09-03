@@ -49,6 +49,7 @@ class LightningConfig:
     
     # Optional configs
     num_training_epochs: Optional[int] = attr.ib(default=None)
+    learning_rate: Optional[float] = attr.ib(default=None)
     
     # DataFrame columns
     column_y: str = attr.ib(init=False, default="ml_label")
@@ -59,6 +60,7 @@ class LightningConfig:
     # Late initialization
     data_filenames: List[str] = attr.ib(init=False, default=None)
     pairs: List[str] = attr.ib(init=False, default=None)
+    extras: dict = attr.ib(init=False, default={})
     
     def set_data_config(self, data_paths: List[Path]):
         """ Set data paths attribute. """
@@ -70,6 +72,7 @@ class LightningConfig:
         if hasattr(self, key):
             raise Exception(f"Attribute with key '{key}' already exists!")
         
+        self.extras[key] = value
         setattr(self, key, value)
 
 
