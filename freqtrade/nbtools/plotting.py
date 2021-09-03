@@ -18,7 +18,6 @@ def load_last_plot(n: int, path_mount: Path) -> pd.Series:
     pass
 
 
-# pyright: reportGeneralTypeIssues=false
 def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Path, name: str = "plot", load_last: int = 0):
     trades = trades_data.copy()
 
@@ -89,17 +88,43 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     ax2.grid(b=True, which="both", color=grid_color, linestyle="-", axis="both", alpha=grid_alpha)
     plt.show()
 
+    # Start generate summary
+    trades_win = trades.loc[trades["profit_ratio"] > 0]
+    trades_lost = trades.loc[trades["profit_ratio"] <= 0]
+    win_rate = len(trades_win) / len(trades)
+    lose_rate = len(trades_lost) / len(trades)
+    expectancy = (win_rate * trades_win["profit_ratio"].sum()) + (lose_rate * trades_lost["profit_ratio"].sum())
+    
     portfolio_summary = {
         "Trades": len(trades),
+        "Avg. Stake Amount": trades["stake_amount"].mean(),
+        "Number of Pairs": len(trades["pair"].unique()),
         "Min Balance": min(cum_profit_abs),
         "Max Balance": max(cum_profit_abs),
         "Final Balance": cum_profit_abs[-1],
-        "Avg. Return (%)": trades["profit_ratio"].mean() * 100,
-        "Avg. Trade Duration": str((trades["close_date"] - trades["open_date"]).mean()).split(".")[0],
-        "Wins": len(trades.loc[trades["profit_ratio"] > 0]),
-        "Loses": len(trades.loc[trades["profit_ratio"] <= 0]),
-        "Win Rate": round(len(trades.loc[trades["profit_ratio"] > 0]) / len(trades), 2)
+        "-": "-",
+        "Wins": len(trades_win),
+        "Loses": len(trades_lost),
+        "Win Rate": str(round(win_rate * 100, 2)) + "%",
+        " - ": " - ",
+        "Sum Profit Winners (Ratio)": trades_win["profit_ratio"].sum(),
+        "Sum Profit Losers (Ratio)": trades_lost["profit_ratio"].sum(),
+        "Net Profit (Ratio)": trades_win["profit_ratio"].sum() + trades_lost["profit_ratio"].sum(),
+        "Profit Factor": trades_win["profit_ratio"].sum() / -trades_lost["profit_ratio"].sum(),
+        "Expectancy (% Per Trade)": expectancy,
+        "  -  ": "  -  ",
+        "Avg. Profit (%)": trades["profit_ratio"].mean() * 100,
+        "Avg. Profit (%) Winners": trades_win["profit_ratio"].mean() * 100,
+        "Avg. Profit (%) Losers": trades_lost["profit_ratio"].mean() * 100,
+        "Avg. Duration": str((trades["close_date"] - trades["open_date"]).mean()).split(".")[0],
+        "Avg. Duration Winners": str((trades_win["close_date"] - trades_win["open_date"]).mean()).split(".")[0],
+        "Avg. Duration Losers": str((trades_lost["close_date"] - trades_lost["open_date"]).mean()).split(".")[0],
     }
+    
+    for k in portfolio_summary.keys():
+        if isinstance(portfolio_summary[k], float):
+            portfolio_summary[k] = round(portfolio_summary[k], 2)
+    
     df = pd.DataFrame({k: [v] for k, v in portfolio_summary.items()}).T.round(2)
     df.columns = ["Portfolio Summary"]
     

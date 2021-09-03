@@ -11,8 +11,6 @@ import pandas as pd
 import gc
 import sys
 
-sys.path.append(str(Path(__file__).parent.parent.parent))
-
 from freqtrade.ml.loader import clean_ohlcv_dataframe
 from freqtrade.ml.lightning import LightningModule, LightningConfig
 
@@ -65,6 +63,7 @@ class LightningContainer:
         #     )
         # ]
         
+        sys.path.append(str(Path(__file__).parent.parent.parent))
         df_list = Parallel(n_jobs=8, prefer="processes")(
             delayed(self._load_one)(path) for path in progress(paths, desc="Load and preprocess data")
         )
@@ -191,10 +190,10 @@ class LightningContainer:
             # Drop X columns because freqtrade doesn't need this.
             df_preds = df_preds.drop(columns=self.module.config.columns_x)
         except KeyError:
-            logger.info("Not dropping X columns in predict because it doesn't exist in predict columns")
+            logger.debug("Not dropping X columns in predict because it doesn't exist in predict columns")
         
         df_preds.columns = [str(f"ml_{it}") for it in df_preds.columns]
-        logger.info(f"Returned new columns from df_preds: {list(df_preds.columns)}")
+        logger.debug(f"Returned new columns from df_preds: {list(df_preds.columns)}")
         
         # Step 3: Concat predictions to non NaN pred indexes
         len_preds = len(df_preds)

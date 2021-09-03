@@ -332,6 +332,7 @@ def log_preset(preset: BasePreset, strategy_code: str, stats: dict, config_backt
     logger.info(f"Sync preset with name: {preset_name}")
     logger.info(f"with random name: {metadata['random_name']}")
     logger.info("[WANDB LOG PRESET CONTINUES IN BACKGROUND]")
+    print(f"Preset Name: {preset_name}")
 
 
 @run_in_thread
