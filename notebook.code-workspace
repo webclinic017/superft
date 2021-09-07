@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": ".",
+		}
+	],
+	"settings": {
+		"favorites.resources": [
+			"c:\\CS\\Python\\crypto-collection\\freqtrade\\superft\\notebooks"
+		],
+		"favorites.sortOrder": "ASC",
+		"workbench.colorTheme": "GitHub Light"
+	}
+}

@@ -1,0 +1,160 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+	],
+	"settings": {
+		"workbench.colorTheme": "GitHub Light",
+		"workbench.editorAssociations": {
+			"*.ipynb": "jupyter-notebook"
+		},
+		"python.insidersChannel": "daily",
+		"files.autoSave": "afterDelay",
+	
+		"editor.quickSuggestions": {
+			"other": true,
+			"comments": false,
+			"strings": false
+		},
+	
+		"editor.quickSuggestionsDelay": 1,
+	
+		"python.linting.enabled": true,
+		"python.linting.pylamaEnabled": false,
+	
+		"python.linting.flake8CategorySeverity.F": "Error",
+		"python.linting.flake8CategorySeverity.E": "Error",
+		"python.linting.flake8Args": [
+			"--ignore=E251,E231,E117,W191,E128,E226,E302,E305,W291,E501,E203,E126,E221,E123,E261,E241,E262,PAI100,PAI201,PAI203,PAI202,E402"
+		],
+		"python.pythonPath": "C:\\Python\\Python373\\python.exe",
+	
+		"php.validate.executablePath": "C:\\xampp\\php\\php.exe",
+		"php.suggest.basic": false,
+		"kite.showWelcomeNotificationOnStartup": false,
+		"typescript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": true,
+		"javascript.format.insertSpaceAfterOpeningAndBeforeClosingNonemptyBrackets": true,
+		"bracket-pair-colorizer-2.colors": [
+			"LightGreen",
+			"Orange",
+			"Red",
+			"Cyan"
+		],
+		"editor.formatOnType": true,
+		"beautify.ignore": "",
+		"prettier.jsxBracketSameLine": true,
+		"python.formatting.provider": "yapf",
+		"[python]": {
+			"editor.defaultFormatter": "ms-python.python"
+		},
+		"python.terminal.activateEnvInCurrentTerminal": true,
+		"python.languageServer": "Jedi",
+		"editor.tokenColorCustomizations": {
+			"[One Dark Pro]": {
+				"comments": "#727272"
+			},
+			"[GitHub Light]": {
+				"keywords": "#0C83CB",
+				"strings": "#00A67D",
+				"types": "#EF4146",
+				"functions": "#EF4146",
+				"comments": "#969699",
+				"numbers": "#b642c1",
+				// "variables": "#FF0000"
+			}
+		},
+		"editor.semanticTokenColorCustomizations": {
+			"[One Dark Pro]": {
+				"rules": {
+					"selfParameter": "#C678DD",
+					"variable": "#a5a5a5",
+					"parameter": "#C8BF6F"
+				}
+			},
+			"[GitHub Light]": {
+				"rules": {
+					"selfParameter": "#ff0000"
+				}
+			}
+		},
+		"python.testing.pytestEnabled": true,
+		"python.testing.unittestEnabled": false,
+		"debug.console.fontSize": 12,
+		"terminal.integrated.fontSize": 12,
+		"editor.suggestSelection": "first",
+		"vsintellicode.modify.editor.suggestSelection": "automaticallyOverrodeDefaultValue",
+		"python.analysis.diagnosticSeverityOverrides": {
+			"reportUndefinedVariable": "error",
+			"reportFunctionMemberAccess": "information",
+			"reportMissingImports": "error",
+			"reportMissingModuleSource": "error",
+			"reportConstantRedefinition": "error",
+			"reportOverlappingOverload": "warning",
+			"reportIncompatibleVariableOverride": "error",
+			"reportInvalidStubStatement": "error",
+			"reportInvalidTypeVarUse": "error",
+			"reportGeneralTypeIssues": "warning",
+			"reportImportCycles": "error"
+		},
+		"python.linting.prospectorArgs": [
+			"--without-tool=pep8",
+			"--without-tool=pep257",
+			"--no-style-warnings",
+			"--profile=c:\\Python\\Python373\\etc\\prospector-profile.yaml",
+			"--tool=pylint",
+			"--tool=mccabe"
+		],
+		"python.linting.pylintEnabled": false,
+		"python.linting.prospectorPath": "C:\\Python\\Python373\\Scripts\\prospector.exe",
+		"python.defaultInterpreterPath": "C:\\Python\\Python39\\python.exe",
+		"[Log]": {
+			"editor.fontSize": 12
+		},
+		"jupyter.askForKernelRestart": false,
+		"redhat.telemetry.enabled": true,
+		"editor.inlineSuggest.enabled": true,
+		"github.copilot.enable": {
+			"*": true,
+			"yaml": true,
+			"plaintext": true,
+			"markdown": false
+		},
+		"github.copilot.list.count": 20,
+		"github.copilot.inlineSuggest.enable": false,
+		"notebook.cellToolbarLocation": {
+			"default": "right",
+			"jupyter-notebook": "left"
+		},
+		"gitlens.defaultDateFormat": "YYYY MMMM Do, HH:MM",
+		"gitlens.defaultDateShortFormat": "YYYY MMMM Do",
+		"todo-tree.general.tags": [
+			"BUG",
+			"HACK",
+			"FIXME",
+			"TODO",
+			"XXX",
+			"[ ]",
+			"[x]"
+		],
+		"todo-tree.regex.regex": "(//|#|<!--|;|/\\*|^|^\\s*(-|\\d+.))\\s*($TAGS)",
+		"appworks.materialSources": [],
+		"sourcery.token": "user_DqDKzmWUVG2B3DrX5noeb80yX1ySgnuSKsgacfDCCjJX5zOr0i1YtMzZDSA",
+		"notebook.consolidatedRunButton": true,
+		"notebook.showFoldingControls": "always",
+		"python.analysis.completeFunctionParens": true,
+		"gitlens.codeLens.enabled": false,
+		"gitlens.currentLine.enabled": false,
+		"gitlens.hovers.currentLine.over": "line",
+		"notebook.lineNumbers": "on",
+		"workbench.iconTheme": "material-icon-theme",
+		"jupyter.widgetScriptSources": [
+			"jsdelivr.com",
+			"unpkg.com"
+		],
+		"security.workspace.trust.untrustedFiles": "open",
+		"notebook.insertToolbarLocation": "notebookToolbar",
+		"notebook.output.textLineLimit": 1000,
+		"python.analysis.autoImportCompletions": false
+	}
+}

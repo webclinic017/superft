@@ -82,6 +82,7 @@ def main(
         "hyperopt_random_state": hyperopt_random_state,
         "hyperopt_jobs": hyperopt_jobs,
         "verbosity": 0,
+        "print_all": True,
     }
 
     preset = FilePreset(

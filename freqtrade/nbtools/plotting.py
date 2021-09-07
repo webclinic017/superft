@@ -40,7 +40,7 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     btc_usdt = btc_usdt_df.loc[(btc_usdt_df["date"] >= start) & (btc_usdt_df["date"] <= end)]
     btc_usdt = btc_usdt.set_index("date").resample("1h").mean()
     fig, ax1 = plt.subplots(figsize=(18, 5))
-    ax1.plot(btc_usdt["close"], color="orange", label="BTC/USDT", alpha=0.5)
+    ax1.plot(btc_usdt["close"], color="orange", label="BTC/USDT", alpha=1)
     ax1.tick_params(axis="y", labelcolor="orange")
     ax1.grid(b=True, which="both", color=grid_color, linestyle="-", axis="both", alpha=grid_alpha)
     ax1.grid(b=False, which="both", axis="y")
@@ -78,13 +78,14 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     ax1.set_title("Trade $ returns")
     ax1.grid(b=True, which="both", color=grid_color, linestyle="-", axis="both", alpha=grid_alpha)
     # Section 2.2 Right: Profit $ distribution histogram
-    mean_profits = trades.profit_abs.mean()
-    std_profits = trades.profit_abs.std()
+    trades["profit_percentage"] = trades.profit_ratio * 100
+    mean_profits = trades.profit_percentage.mean()
+    std_profits = trades.profit_percentage.std()
     ax2.hist(
-        trades.profit_abs.clip(mean_profits - 4 * std_profits, mean_profits + 4 * std_profits),
+        trades.profit_percentage.clip(mean_profits - 4 * std_profits, mean_profits + 4 * std_profits),
         bins=100,
     )
-    ax2.set_title("Returns $ distribution")
+    ax2.set_title("Returns %% distribution")
     ax2.grid(b=True, which="both", color=grid_color, linestyle="-", axis="both", alpha=grid_alpha)
     plt.show()
 
@@ -93,7 +94,7 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     trades_lost = trades.loc[trades["profit_ratio"] <= 0]
     win_rate = len(trades_win) / len(trades)
     lose_rate = len(trades_lost) / len(trades)
-    expectancy = (win_rate * trades_win["profit_ratio"].sum()) + (lose_rate * trades_lost["profit_ratio"].sum())
+    expectancy = (win_rate * trades_win["profit_ratio"].mean()) + (lose_rate * trades_lost["profit_ratio"].mean())
     
     portfolio_summary = {
         "Trades": len(trades),
@@ -108,14 +109,14 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
         "Win Rate": str(round(win_rate * 100, 2)) + "%",
         " - ": " - ",
         "Profit Factor": trades_win["profit_ratio"].sum() / -trades_lost["profit_ratio"].sum(),
-        "Expectancy (% Per Trade)": expectancy,
+        "Expectancy (% Per Trade)": expectancy * 100,
         "  -  ": "  -  ",
-        "Net Profit (Rate)": trades_win["profit_ratio"].sum() + trades_lost["profit_ratio"].sum(),
-        "Sum Profit Winners (Rate)": trades_win["profit_ratio"].sum(),
-        "Sum Profit Losers (Rate)": trades_lost["profit_ratio"].sum(),
         "Avg. Profit (%)": trades["profit_ratio"].mean() * 100,
         "Avg. Profit (%) Winners": trades_win["profit_ratio"].mean() * 100,
         "Avg. Profit (%) Losers": trades_lost["profit_ratio"].mean() * 100,
+        "Net Profit (Rate)": trades_win["profit_ratio"].sum() + trades_lost["profit_ratio"].sum(),
+        "Sum Profit Winners (Rate)": trades_win["profit_ratio"].sum(),
+        "Sum Profit Losers (Rate)": trades_lost["profit_ratio"].sum(),
         "Avg. Duration": str((trades["close_date"] - trades["open_date"]).mean()).split(".")[0],
         "Avg. Duration Winners": str((trades_win["close_date"] - trades_win["open_date"]).mean()).split(".")[0],
         "Avg. Duration Losers": str((trades_lost["close_date"] - trades_lost["open_date"]).mean()).split(".")[0],
@@ -128,10 +129,9 @@ def plot_profits(trades_data: pd.DataFrame, start: str, end: str, path_mount: Pa
     df = pd.DataFrame({k: [v] for k, v in portfolio_summary.items()}).T
     df.columns = ["Portfolio Summary"]
     
-    # save to json
     filename = f"{name}___{start}_to_{end}___{int(time.time())}___{int(cum_profit_abs[-1])}.csv"
     cum_profit_abs.to_csv(path_mount / "plot_history" / filename)
-    return df   
+    return df
 
 
 def plot_profits_timerange(trades_data: pd.DataFrame, timerange: str, path_mount: Path, name: str = "plot"):
@@ -152,4 +152,4 @@ def plot_profits_timerange(trades_data: pd.DataFrame, timerange: str, path_mount
 
 
 def save_plot():
-    pass
+    boom = "hi"

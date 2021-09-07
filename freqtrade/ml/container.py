@@ -30,6 +30,8 @@ class LightningContainer:
     
     def __attrs_post_init__(self):
         self.config = self.module.config
+        logger.info("Set up config")
+        logger.info(self.config.__dict__)
     
     def get_data_paths(self, cwd: Path, timeframe: str, exchange: str) -> List[Path]:
         """ List of Path to your per pair JSON data consisting of [timestamp, open, high, low, close, volume] columns"""
@@ -171,7 +173,7 @@ class LightningContainer:
         df_onepair_original = concat_columns_last_index(df_onepair_original, df_preds)
         return df_onepair_original
     
-    def predict(self, df_onepair_original: pd.DataFrame) -> pd.DataFrame:
+    def predict(self, df_onepair_original: pd.DataFrame, do_log: bool = False) -> pd.DataFrame:
         """ Container wrapper for module.predict().
         Returns the original of DataFrame with prediction columns. 
         This inference will be used in strategy.py file that loaded from wandb.
@@ -190,11 +192,12 @@ class LightningContainer:
             # Drop X columns because freqtrade doesn't need this.
             df_preds = df_preds.drop(columns=self.module.config.columns_x)
         except KeyError:
-            # logger.debug("Not dropping X columns in predict because it doesn't exist in predict columns")
-            pass
+            if do_log:
+                logger.debug("Not dropping X columns in predict because it doesn't exist in predict columns")
         
         df_preds.columns = [str(f"ml_{it}") for it in df_preds.columns]
-        # logger.debug(f"Returned new columns from df_preds: {list(df_preds.columns)}")
+        if do_log:
+            logger.debug(f"Returned new columns from df_preds: {list(df_preds.columns)}")
         
         # Step 3: Concat predictions to non NaN pred indexes
         len_preds = len(df_preds)
