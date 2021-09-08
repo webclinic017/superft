@@ -9,12 +9,11 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer, String,
                         create_engine, desc, func, inspect)
 from sqlalchemy.exc import NoSuchModuleError
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import Query, relationship, scoped_session, sessionmaker
+from sqlalchemy.orm import Query, declarative_base, relationship, scoped_session, sessionmaker
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.sql.schema import UniqueConstraint
 
-from freqtrade.constants import DATETIME_PRINT_FORMAT
+from freqtrade.constants import DATETIME_PRINT_FORMAT, NON_OPEN_EXCHANGE_STATES
 from freqtrade.enums import SellType
 from freqtrade.exceptions import DependencyException, OperationalException
 from freqtrade.misc import safe_value_fallback
@@ -160,9 +159,9 @@ class Order(_DECL_BASE):
             self.order_date = datetime.fromtimestamp(order['timestamp'] / 1000, tz=timezone.utc)
 
         self.ft_is_open = True
-        if self.status in ('closed', 'canceled', 'cancelled'):
+        if self.status in NON_OPEN_EXCHANGE_STATES:
             self.ft_is_open = False
-            if order.get('filled', 0) > 0:
+            if (order.get('filled', 0.0) or 0.0) > 0:
                 self.order_filled_date = datetime.now(timezone.utc)
         self.order_update_date = datetime.now(timezone.utc)
 
@@ -258,6 +257,7 @@ class LocalTrade():
     sell_reason: str = ''
     sell_order_status: str = ''
     strategy: str = ''
+    buy_tag: Optional[str] = None
     timeframe: Optional[int] = None
 
     def __init__(self, **kwargs):
@@ -289,6 +289,7 @@ class LocalTrade():
             'amount_requested': round(self.amount_requested, 8) if self.amount_requested else None,
             'stake_amount': round(self.stake_amount, 8),
             'strategy': self.strategy,
+            'buy_tag': self.buy_tag,
             'timeframe': self.timeframe,
 
             'fee_open': self.fee_open,
@@ -353,12 +354,12 @@ class LocalTrade():
         LocalTrade.trades_open = []
         LocalTrade.total_profit = 0
 
-    def adjust_min_max_rates(self, current_price: float) -> None:
+    def adjust_min_max_rates(self, current_price: float, current_price_low: float) -> None:
         """
         Adjust the max_rate and min_rate.
         """
         self.max_rate = max(current_price, self.max_rate or self.open_rate)
-        self.min_rate = min(current_price, self.min_rate or self.open_rate)
+        self.min_rate = min(current_price_low, self.min_rate or self.open_rate)
 
     def _set_new_stoploss(self, new_loss: float, stoploss: float):
         """Assign new stop value"""
@@ -637,7 +638,7 @@ class LocalTrade():
 
             # skip case if trailing-stop changed the stoploss already.
             if (trade.stop_loss == trade.initial_stop_loss
-               and trade.initial_stop_loss_pct != desired_stoploss):
+                    and trade.initial_stop_loss_pct != desired_stoploss):
                 # Stoploss value got changed
 
                 logger.info(f"Stoploss for {trade} needs adjustment...")
@@ -704,6 +705,7 @@ class Trade(_DECL_BASE, LocalTrade):
     sell_reason = Column(String(100), nullable=True)
     sell_order_status = Column(String(100), nullable=True)
     strategy = Column(String(100), nullable=True)
+    buy_tag = Column(String(100), nullable=True)
     timeframe = Column(Integer, nullable=True)
 
     def __init__(self, **kwargs):

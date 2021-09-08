@@ -1,162 +1,201 @@
-# Freqtrade Notebook Backtesting
+# ![freqtrade](https://raw.githubusercontent.com/freqtrade/freqtrade/develop/docs/assets/freqtrade_poweredby.svg)
 
-## Motivation
+[![Freqtrade CI](https://github.com/freqtrade/freqtrade/workflows/Freqtrade%20CI/badge.svg)](https://github.com/freqtrade/freqtrade/actions/)
+[![Coverage Status](https://coveralls.io/repos/github/freqtrade/freqtrade/badge.svg?branch=develop&service=github)](https://coveralls.io/github/freqtrade/freqtrade?branch=develop)
+[![Documentation](https://readthedocs.org/projects/freqtrade/badge/)](https://www.freqtrade.io)
+[![Maintainability](https://api.codeclimate.com/v1/badges/5737e6d668200b7518ff/maintainability)](https://codeclimate.com/github/freqtrade/freqtrade/maintainability)
 
-This project is intended to be used in cloud notebooks such as **Kaggle**, where editing Python file is not possible. So we want to edit our freqtrade strategies in the notebook, then backtest it using code. This project makes doing that possible.
+Freqtrade is a free and open source crypto trading bot written in Python. It is designed to support all major exchanges and be controlled via Telegram. It contains backtesting, plotting and money management tools as well as strategy optimization by machine learning.
 
-As time passes, we noticed that our iteration is ineffective enough to produce better strategies. We decided to introduce `wandb` to this project. This was intended to log and sync every backtesting data (from code, to results) into cloud storage (`wandb` is free for the first 100 GB). 
+![freqtrade](https://raw.githubusercontent.com/freqtrade/freqtrade/develop/docs/assets/freqtrade-screenshot.png)
 
-In the upcoming release, this project will store the freqtrade data (obtained from `freqtrade download-data`) to that cloud service as well. This was proposed because `freqtrade download-data` is slow when we start new notebook from **Kaggle**. Through GitHub Actions, data downloading will be scheduled and synced every day.
+## Disclaimer
 
-## Installation
+This software is for educational purposes only. Do not risk money which
+you are afraid to lose. USE THE SOFTWARE AT YOUR OWN RISK. THE AUTHORS
+AND ALL AFFILIATES ASSUME NO RESPONSIBILITY FOR YOUR TRADING RESULTS.
 
-This script was tested and working in Kaggle.
+Always start by running a trading bot in Dry-run and do not engage money
+before you understand how it works and what profit/loss you should
+expect.
+
+We strongly recommend you to have coding and Python knowledge. Do not
+hesitate to read the source code and understand the mechanism of this bot.
+
+## Supported Exchange marketplaces
+
+Please read the [exchange specific notes](docs/exchanges.md) to learn about eventual, special configurations needed for each exchange.
+
+- [X] [Binance](https://www.binance.com/) ([*Note for binance users](docs/exchanges.md#binance-blacklist))
+- [X] [Bittrex](https://bittrex.com/)
+- [X] [Kraken](https://kraken.com/)
+- [X] [FTX](https://ftx.com)
+- [ ] [potentially many others](https://github.com/ccxt/ccxt/). _(We cannot guarantee they will work)_
+
+### Community tested
+
+Exchanges confirmed working by the community:
+
+- [X] [Bitvavo](https://bitvavo.com/)
+- [X] [Kucoin](https://www.kucoin.com/)
+
+## Documentation
+
+We invite you to read the bot documentation to ensure you understand how the bot is working.
+
+Please find the complete documentation on our [website](https://www.freqtrade.io).
+
+## Features
+
+- [x] **Based on Python 3.7+**: For botting on any operating system - Windows, macOS and Linux.
+- [x] **Persistence**: Persistence is achieved through sqlite.
+- [x] **Dry-run**: Run the bot without paying money.
+- [x] **Backtesting**: Run a simulation of your buy/sell strategy.
+- [x] **Strategy Optimization by machine learning**: Use machine learning to optimize your buy/sell strategy parameters with real exchange data.
+- [x] **Edge position sizing** Calculate your win rate, risk reward ratio, the best stoploss and adjust your position size before taking a position for each specific market. [Learn more](https://www.freqtrade.io/en/latest/edge/).
+- [x] **Whitelist crypto-currencies**: Select which crypto-currency you want to trade or use dynamic whitelists.
+- [x] **Blacklist crypto-currencies**: Select which crypto-currency you want to avoid.
+- [x] **Manageable via Telegram**: Manage the bot with Telegram.
+- [x] **Display profit/loss in fiat**: Display your profit/loss in 33 fiat.
+- [x] **Daily summary of profit/loss**: Provide a daily summary of your profit/loss.
+- [x] **Performance status report**: Provide a performance status of your current trades.
+
+## Quick start
+
+Freqtrade provides a Linux/macOS script to install all dependencies and help you to configure the bot.
 
 ```bash
-import os
-
-# Install TA-Lib
-!wget -q http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz 2>&1 > /dev/null
-!tar xvzf ta-lib-0.4.0-src.tar.gz 2>&1 > /dev/null
-os.chdir('ta-lib') # Can't use !cd in co-lab
-!./configure --prefix=/usr 2>&1 > /dev/null
-!make 2>&1 > /dev/null
-!make install 2>&1 > /dev/null
-os.chdir('../')
-!pip install TA-Lib 2>&1 > /dev/null
-
-# Install Freqtrade
-!git clone https://github.com/gyo-dor/superft
-os.chdir("/kaggle/working/superft")
-!pip install -r requirements-nb.txt
-!pip uninstall sqlalchemy -y
-!pip install sqlalchemy==1.4.20
-
-# Important: if you skip this, the code will crash.
-!wandb login <WANDB_API_KEY>
+git clone -b develop https://github.com/freqtrade/freqtrade.git 
+cd freqtrade
+./setup.sh --install
 ```
 
-## Usage
+For any other type of installation please refer to [Installation doc](https://www.freqtrade.io/en/latest/installation/).
 
-Inside our notebook, we can define our strategy like this:
+## Basic Usage
 
-```python
-def strategy_func():
-    """ Start Strategy Code """
-    from freqtrade.nbtools.strategy import INbStrategy
-    from numpy.lib.npyio import save
-    from numpy.lib.utils import info
-    from pandas import DataFrame
-    import numpy as np  # noqa
-    import pandas as pd  # noqa
-    import talib.abstract as ta
+### Bot commands
 
-    class NotebookStrategy(INbStrategy):
-				# These attributes are REQUIRED!
-        timeframe = "15m"
-        minimal_roi = {"0": 0.02, "30": 0.01}
-        stoploss = -0.01 
-        startup_candle_count: int = 100
-
-        def populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
-            dataframe["ema_10"] = ta.EMA(dataframe["close"], timeperiod=10)
-            dataframe["ema_20"] = ta.EMA(dataframe["close"], timeperiod=20)
-            return dataframe
-
-        def populate_buy_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
-            dataframe.loc[
-                (
-                    (dataframe['ema_10'] > dataframe['ema_20']) &
-                    (dataframe['volume'] > 0)  # Make sure Volume is not 0
-                ),
-                'buy'] = 1
-            return dataframe
-
-        def populate_sell_trend(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
-            dataframe.loc[
-                (
-                    (dataframe['ema_10'] < dataframe['ema_20']) &
-                    (dataframe['volume'] > 0)  # Make sure Volume is not 0
-                ),
-                'sell'] = 1
-            return dataframe
-    """ End Strategy Code """
 ```
+usage: freqtrade [-h] [-V]
+                 {trade,create-userdir,new-config,new-hyperopt,new-strategy,download-data,convert-data,convert-trade-data,backtesting,edge,hyperopt,hyperopt-list,hyperopt-show,list-exchanges,list-hyperopts,list-markets,list-pairs,list-strategies,list-timeframes,show-trades,test-pairlist,plot-dataframe,plot-profit}
+                 ...
 
-Then we need to feed that strategy function into Backtester, which needs Preset, which we will introduce below.
+Free, open source crypto trading bot
 
-**NOTE : Always name your strategy class "NotebookStrategy" otherwise the backtester can't detect it!**
+positional arguments:
+  {trade,create-userdir,new-config,new-hyperopt,new-strategy,download-data,convert-data,convert-trade-data,backtesting,edge,hyperopt,hyperopt-list,hyperopt-show,list-exchanges,list-hyperopts,list-markets,list-pairs,list-strategies,list-timeframes,show-trades,test-pairlist,plot-dataframe,plot-profit}
+    trade               Trade module.
+    create-userdir      Create user-data directory.
+    new-config          Create new config
+    new-hyperopt        Create new hyperopt
+    new-strategy        Create new strategy
+    download-data       Download backtesting data.
+    convert-data        Convert candle (OHLCV) data from one format to
+                        another.
+    convert-trade-data  Convert trade data from one format to another.
+    backtesting         Backtesting module.
+    edge                Edge module.
+    hyperopt            Hyperopt module.
+    hyperopt-list       List Hyperopt results
+    hyperopt-show       Show details of Hyperopt results
+    list-exchanges      Print available exchanges.
+    list-hyperopts      Print available hyperopt classes.
+    list-markets        Print markets on exchange.
+    list-pairs          Print pairs on exchange.
+    list-strategies     Print available strategies.
+    list-timeframes     Print available timeframes for the exchange.
+    show-trades         Show trades.
+    test-pairlist       Test your pairlist configuration.
+    plot-dataframe      Plot candles with indicators.
+    plot-profit         Generate plot showing profits.
 
-## Config Preset Usage
-
-This introduces config templating. You now can craft your configs and strategies everywhere. To learn more about configs, see the example config provided.
-
-`from freqtrade.nbtools import configs` is just like any freqtrade config, but in Python importable version. You can check the official freqtrade repo then go to config_full.json.example
-
-```python
-from pathlib import Path
-from freqtrade.nbtools.preset import ConfigPreset
-from freqtrade.nbtools.backtest import backtest
-from freqtrade.nbtools import configs
-
-# Instantiate your preset
-preset = ConfigPreset(
-    config_dict=configs.DEFAULT,
-    name="ma_cross",
-    path_data=Path.cwd() / "data",
-    timerange="20210101-20210201",
-)
-
-# Optional: Overwrite configs (fee, stake_amount, max_open_trades, etc.)
-preset.overwrite_config(stake_amount=15)
-
-# Start backtesting
-stats, summary = backtest(preset, strategy_func)
-```
-
-## Local Preset Usage
-
-This will use the config in that preset, and it's built in strategy.
-To create a new Local Preset:
-
-1. Create new folder with name of the preset. Example `ma_cross`
-2. Inside that folder, create `config-backtesting.json` based on freqtrade's default full config (see in freqtrade repo)
-3. Create new folder called `strategies`, `logs`, and `exports`
-4. Inside `strategies`, create your own freqtrade strategy, filename must be `strategy.py`. **NOTE**: Class name must **`NotebookStrategy`**!
-
-```python
-from freqtrade.nbtools.preset import LocalPreset
-
-preset = LocalPreset(
-    path_local_preset=Path.cwd() / "presets" / "ma_cross",
-    path_data=Path.cwd() / "data",
-    timerange="20210101-20210201"
-)
-
-# Optional: You can still overwrite configs
-preset.overwrite_config(stake_amount=15)
-
-# To backtest it's own local strategy, you need to refer to preset.default_strategy_code
-stats, summary = backtest(preset, preset.default_strategy_code)
+optional arguments:
+  -h, --help            show this help message and exit
+  -V, --version         show program's version number and exit
 
 ```
 
-## Cloud Preset Usage
+### Telegram RPC commands
 
-This usage was intended to reproduce past strategy results (but if you want to modify configs, it's possible) since all presets that backtested through `*Preset` class will be synced using WandB (Free 100 GB storage!). This enabled us to log our progress to creating profitable freqtrade strategies.
+Telegram is not mandatory. However, this is a great way to control your bot. More details and the full command list on our [documentation](https://www.freqtrade.io/en/latest/telegram-usage/)
 
-```python
-from freqtrade.nbtools.preset import CloudPreset
+- `/start`: Starts the trader.
+- `/stop`: Stops the trader.
+- `/stopbuy`: Stop entering new trades.
+- `/status <trade_id>|[table]`: Lists all or specific open trades.
+- `/profit [<n>]`: Lists cumulative profit from all finished trades, over the last n days.
+- `/forcesell <trade_id>|all`: Instantly sells the given trade (Ignoring `minimum_roi`).
+- `/performance`: Show performance of each finished trade grouped by pair
+- `/balance`: Show account balance per currency.
+- `/daily <n>`: Shows profit or loss per day, over the last n days.
+- `/help`: Show help message.
+- `/version`: Show version.
 
-preset = CloudPreset(
-    name="your_cloud_preset_name",
-    path_data=Path.cwd() / "data",
-    timerange="20210101-20210201"
-)
+## Development branches
 
-# Optional: You can still overwrite configs
-preset.overwrite_config(stake_amount=15)
+The project is currently setup in two main branches:
 
-# To backtest it's own strategy, you need to refer to preset.default_strategy_code
-stats, summary = backtest(preset, preset.default_strategy_code)
-```
+- `develop` - This branch has often new features, but might also contain breaking changes. We try hard to keep this branch as stable as possible.
+- `stable` - This branch contains the latest stable release. This branch is generally well tested.
+- `feat/*` - These are feature branches, which are being worked on heavily. Please don't use these unless you want to test a specific feature.
+
+## Support
+
+### Help / Discord
+
+For any questions not covered by the documentation or for further information about the bot, or to simply engage with like-minded individuals, we encourage you to join the Freqtrade [discord server](https://discord.gg/p7nuUNVfP7).
+
+### [Bugs / Issues](https://github.com/freqtrade/freqtrade/issues?q=is%3Aissue)
+
+If you discover a bug in the bot, please
+[search our issue tracker](https://github.com/freqtrade/freqtrade/issues?q=is%3Aissue)
+first. If it hasn't been reported, please
+[create a new issue](https://github.com/freqtrade/freqtrade/issues/new/choose) and
+ensure you follow the template guide so that our team can assist you as
+quickly as possible.
+
+### [Feature Requests](https://github.com/freqtrade/freqtrade/labels/enhancement)
+
+Have you a great idea to improve the bot you want to share? Please,
+first search if this feature was not [already discussed](https://github.com/freqtrade/freqtrade/labels/enhancement).
+If it hasn't been requested, please
+[create a new request](https://github.com/freqtrade/freqtrade/issues/new/choose)
+and ensure you follow the template guide so that it does not get lost
+in the bug reports.
+
+### [Pull Requests](https://github.com/freqtrade/freqtrade/pulls)
+
+Feel like our bot is missing a feature? We welcome your pull requests!
+
+Please read our
+[Contributing document](https://github.com/freqtrade/freqtrade/blob/develop/CONTRIBUTING.md)
+to understand the requirements before sending your pull-requests.
+
+Coding is not a necessity to contribute - maybe start with improving our documentation?
+Issues labeled [good first issue](https://github.com/freqtrade/freqtrade/labels/good%20first%20issue) can be good first contributions, and will help get you familiar with the codebase.
+
+**Note** before starting any major new feature work, *please open an issue describing what you are planning to do* or talk to us on [discord](https://discord.gg/p7nuUNVfP7) (please use the #dev channel for this). This will ensure that interested parties can give valuable feedback on the feature, and let others know that you are working on it.
+
+**Important:** Always create your PR against the `develop` branch, not `stable`.
+
+## Requirements
+
+### Up-to-date clock
+
+The clock must be accurate, synchronized to a NTP server very frequently to avoid problems with communication to the exchanges.
+
+### Min hardware required
+
+To run this bot we recommend you a cloud instance with a minimum of:
+
+- Minimal (advised) system requirements: 2GB RAM, 1GB disk space, 2vCPU
+
+### Software requirements
+
+- [Python 3.7.x](http://docs.python-guide.org/en/latest/starting/installation/)
+- [pip](https://pip.pypa.io/en/stable/installing/)
+- [git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+- [TA-Lib](https://mrjbq7.github.io/ta-lib/install.html)
+- [virtualenv](https://virtualenv.pypa.io/en/stable/installation.html) (Recommended)
+- [Docker](https://www.docker.com/products/docker) (Recommended)
